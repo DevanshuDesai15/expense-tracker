@@ -1,29 +1,40 @@
-import { useState, useEffect } from 'react';
-import { 
-  collection, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
-  onSnapshot, 
+import { useState, useEffect } from "react";
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  onSnapshot,
   orderBy,
-  query 
-} from 'firebase/firestore';
-import { db } from '../firebase/config';
-import { v4 as uuidv4 } from 'uuid';
+  query,
+  where,
+} from "firebase/firestore";
+import { db } from "../firebase/config";
+import { useAuthContext } from "../contexts/AuthContext";
+import { v4 as uuidv4 } from "uuid";
 
 export const useIncome = () => {
+  const { user } = useAuthContext();
   const [incomeEntries, setIncomeEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!user) {
+      setIncomeEntries([]);
+      setLoading(false);
+      return;
+    }
+
     const q = query(
-      collection(db, 'income'),
-      orderBy('date', 'desc')
+      collection(db, "income"),
+      where("userId", "==", user.uid),
+      orderBy("date", "desc")
     );
 
-    const unsubscribe = onSnapshot(q, 
+    const unsubscribe = onSnapshot(
+      q,
       (querySnapshot) => {
         const incomeData = [];
         querySnapshot.forEach((doc) => {
@@ -39,15 +50,21 @@ export const useIncome = () => {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const addIncome = async (incomeData) => {
+    if (!user) {
+      throw new Error("User must be authenticated to add income");
+    }
+
     try {
-      const docRef = await addDoc(collection(db, 'income'), {
+      const docRef = await addDoc(collection(db, "income"), {
         ...incomeData,
         id: uuidv4(),
+        userId: user.uid,
+        userEmail: user.email,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
       return docRef.id;
     } catch (err) {
@@ -57,11 +74,15 @@ export const useIncome = () => {
   };
 
   const updateIncome = async (id, incomeData) => {
+    if (!user) {
+      throw new Error("User must be authenticated to update income");
+    }
+
     try {
-      const docRef = doc(db, 'income', id);
+      const docRef = doc(db, "income", id);
       await updateDoc(docRef, {
         ...incomeData,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
     } catch (err) {
       setError(err.message);
@@ -70,8 +91,12 @@ export const useIncome = () => {
   };
 
   const deleteIncome = async (id) => {
+    if (!user) {
+      throw new Error("User must be authenticated to delete income");
+    }
+
     try {
-      await deleteDoc(doc(db, 'income', id));
+      await deleteDoc(doc(db, "income", id));
     } catch (err) {
       setError(err.message);
       throw err;
@@ -84,6 +109,6 @@ export const useIncome = () => {
     error,
     addIncome,
     updateIncome,
-    deleteIncome
+    deleteIncome,
   };
 };

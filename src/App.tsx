@@ -7,7 +7,9 @@ import {
   BarChart3, 
   Settings,
   Menu,
-  X
+  X,
+  LogOut,
+  User
 } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import ExpenseForm from './components/ExpenseForm';
@@ -15,12 +17,14 @@ import ExpenseList from './components/ExpenseList';
 import IncomeForm from './components/IncomeForm';
 import IncomeList from './components/IncomeList';
 import Onboarding from './components/Onboarding';
+import AuthModal from './components/AuthModal';
+import { AuthProvider, useAuthContext } from './contexts/AuthContext';
 import { useExpenses } from './hooks/useExpenses';
 import { useIncome } from './hooks/useIncome';
 
 type ActiveView = 'dashboard' | 'expenses' | 'income' | 'analytics';
 
-function App() {
+const AppContent = () => {
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
@@ -28,7 +32,10 @@ function App() {
   const [editingIncome, setEditingIncome] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+
+  const { user, loading: authLoading, logout } = useAuthContext();
 
   const { 
     expenses, 
@@ -48,21 +55,42 @@ function App() {
     deleteIncome 
   } = useIncome();
 
-  // Check if user has completed onboarding
+  // Check authentication and onboarding status
   useEffect(() => {
-    const completed = localStorage.getItem('onboarding-completed');
-    const hasData = expenses.length > 0 || incomeEntries.length > 0;
-    
-    if (!completed && !hasData && !expensesLoading && !incomeLoading) {
-      setShowOnboarding(true);
+    if (!authLoading && !user) {
+      setShowAuthModal(true);
+      return;
     }
-    
-    setHasCompletedOnboarding(!!completed);
-  }, [expenses.length, incomeEntries.length, expensesLoading, incomeLoading]);
+
+    if (user) {
+      setShowAuthModal(false);
+      
+      // Check onboarding for authenticated user
+      const completed = localStorage.getItem(`onboarding-completed-${user.uid}`);
+      const hasData = expenses.length > 0 || incomeEntries.length > 0;
+      
+      if (!completed && !hasData && !expensesLoading && !incomeLoading) {
+        setShowOnboarding(true);
+      }
+      
+      setHasCompletedOnboarding(!!completed);
+    }
+  }, [user, authLoading, expenses.length, incomeEntries.length, expensesLoading, incomeLoading]);
 
   const handleOnboardingComplete = () => {
-    localStorage.setItem('onboarding-completed', 'true');
-    setHasCompletedOnboarding(true);
+    if (user) {
+      localStorage.setItem(`onboarding-completed-${user.uid}`, 'true');
+      setHasCompletedOnboarding(true);
+      setShowOnboarding(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const handleAddExpense = async (expenseData: any) => {
@@ -169,14 +197,41 @@ function App() {
     }
   };
 
-  if (expensesLoading || incomeLoading) {
+  if (authLoading || expensesLoading || incomeLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your financial data...</p>
+          <p className="text-gray-600">
+            {authLoading ? 'Authenticating...' : 'Loading your financial data...'}
+          </p>
         </div>
       </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="p-8 bg-white rounded-lg shadow-lg max-w-md">
+              <div className="p-4 bg-blue-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <BarChart3 className="w-8 h-8 text-blue-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome to FinanceTracker</h1>
+              <p className="text-gray-600 mb-6">Please sign in to manage your expenses and income.</p>
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                Get Started
+              </button>
+            </div>
+          </div>
+        </div>
+        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      </>
     );
   }
 
@@ -297,6 +352,26 @@ function App() {
                   <span className="hidden md:inline">Income</span>
                 </button>
               </div>
+              
+              {/* User Menu */}
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 text-gray-700">
+                  <div className="p-2 bg-gray-100 rounded-full">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <span className="hidden sm:inline text-sm">
+                    {user?.displayName || user?.email}
+                  </span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden md:inline text-sm">Logout</span>
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -334,7 +409,21 @@ function App() {
         onClose={() => setShowOnboarding(false)}
         onComplete={handleOnboardingComplete}
       />
+
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+      />
     </div>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
