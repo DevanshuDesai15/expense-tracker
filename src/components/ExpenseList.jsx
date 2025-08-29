@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Search, 
-  Filter, 
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Search,
+  Filter,
   Download,
   Calendar,
   DollarSign,
@@ -14,9 +14,10 @@ import {
   X
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
-import { DEFAULT_EXPENSE_CATEGORIES } from '../data/defaultCategories';
+import { useCategories } from '../hooks/useCategories';
 
 const ExpenseList = ({ expenses, onEdit, onDelete, onAdd }) => {
+  const { allCategories, getCategoryName } = useCategories();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [dateRange, setDateRange] = useState('current-month');
@@ -36,7 +37,7 @@ const ExpenseList = ({ expenses, onEdit, onDelete, onAdd }) => {
   const filteredAndSortedExpenses = useMemo(() => {
     let filtered = expenses.filter(expense => {
       // Search filter
-      const matchesSearch = !searchTerm || 
+      const matchesSearch = !searchTerm ||
         expense.vendor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         expense.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -46,7 +47,7 @@ const ExpenseList = ({ expenses, onEdit, onDelete, onAdd }) => {
       // Date filter
       const expenseDate = parseISO(expense.date);
       let matchesDate = true;
-      
+
       switch (dateRange) {
         case 'current-month':
           matchesDate = expenseDate >= currentMonth.start && expenseDate <= currentMonth.end;
@@ -92,10 +93,7 @@ const ExpenseList = ({ expenses, onEdit, onDelete, onAdd }) => {
   const totalAmount = filteredAndSortedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   const totalCashBack = filteredAndSortedExpenses.reduce((sum, expense) => sum + (expense.cashBackEarned || 0), 0);
 
-  const getCategoryName = (categoryId) => {
-    const category = DEFAULT_EXPENSE_CATEGORIES.find(cat => cat.id === categoryId);
-    return category ? category.name : categoryId;
-  };
+
 
   const handleSelectExpense = (expenseId) => {
     const newSelected = new Set(selectedExpenses);
@@ -141,7 +139,21 @@ const ExpenseList = ({ expenses, onEdit, onDelete, onAdd }) => {
   };
 
   const ExpenseCard = ({ expense }) => (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+    <div
+      className="rounded-lg p-4 transition-all duration-200 cursor-pointer"
+      style={{
+        backgroundColor: '#1a1a1a',
+        border: '1px solid #333333'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = '#2a2a2a';
+        e.currentTarget.style.borderColor = '#555555';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = '#1a1a1a';
+        e.currentTarget.style.borderColor = '#333333';
+      }}
+    >
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center space-x-3 mb-2">
@@ -149,50 +161,67 @@ const ExpenseList = ({ expenses, onEdit, onDelete, onAdd }) => {
               type="checkbox"
               checked={selectedExpenses.has(expense.id)}
               onChange={() => handleSelectExpense(expense.id)}
-              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="rounded focus:ring-yellow-400 focus:ring-2"
+              style={{
+                backgroundColor: '#0a0a0a',
+                borderColor: '#555555',
+                color: '#fbbf24'
+              }}
             />
             <div>
-              <h3 className="font-semibold text-gray-900">{expense.vendor}</h3>
-              <p className="text-sm text-gray-600">{getCategoryName(expense.category)}</p>
+              <h3 className="font-semibold text-white">{expense.vendor}</h3>
+              <p className="text-sm text-gray-400">{getCategoryName(expense.category)}</p>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
             <div>
               <span className="text-gray-500">Amount</span>
-              <p className="font-semibold text-gray-900">${expense.amount.toLocaleString()}</p>
+              <p className="font-semibold text-white">${expense.amount.toLocaleString()}</p>
             </div>
             <div>
               <span className="text-gray-500">Date</span>
-              <p className="font-medium">{format(parseISO(expense.date), 'MMM dd, yyyy')}</p>
+              <p className="font-medium text-gray-300">{format(parseISO(expense.date), 'MMM dd, yyyy')}</p>
             </div>
             <div>
               <span className="text-gray-500">Payment</span>
-              <p className="font-medium">{expense.paymentMethod}</p>
+              <p className="font-medium text-gray-300">{expense.paymentMethod}</p>
             </div>
             {expense.cashBackEarned > 0 && (
               <div>
                 <span className="text-gray-500">Cash Back</span>
-                <p className="font-medium text-green-600">${expense.cashBackEarned.toFixed(2)}</p>
+                <p className="font-medium text-green-400">${expense.cashBackEarned.toFixed(2)}</p>
               </div>
             )}
           </div>
-          
+
           {expense.description && (
-            <p className="text-sm text-gray-600 mt-2">{expense.description}</p>
+            <p className="text-sm text-gray-400 mt-2">{expense.description}</p>
           )}
         </div>
-        
+
         <div className="flex items-center space-x-2 ml-4">
           <button
             onClick={() => onEdit(expense)}
-            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-yellow-400 rounded-lg transition-all duration-200"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#0a0a0a';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
             <Edit className="w-4 h-4" />
           </button>
           <button
             onClick={() => onDelete(expense.id)}
-            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-red-400 rounded-lg transition-all duration-200"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#0a0a0a';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -206,21 +235,45 @@ const ExpenseList = ({ expenses, onEdit, onDelete, onAdd }) => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Expenses</h1>
-          <p className="text-gray-600 mt-1">Track and manage your expenses</p>
+          <h1 className="text-3xl font-bold text-white">Expense <span className="text-yellow-400">Ledger</span></h1>
+          <p className="text-gray-400 mt-1">Track and manage your expenses with Wayne Manor precision</p>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           <button
             onClick={handleExport}
-            className="flex items-center space-x-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 text-gray-300 rounded-lg transition-all duration-200 hover:text-yellow-400"
+            style={{
+              border: '1px solid #555555',
+              backgroundColor: '#0a0a0a'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#1a1a1a';
+              e.currentTarget.style.borderColor = '#fbbf24';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#0a0a0a';
+              e.currentTarget.style.borderColor = '#555555';
+            }}
           >
             <Download className="w-4 h-4" />
             <span>Export</span>
           </button>
           <button
             onClick={onAdd}
-            className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 text-black font-medium rounded-lg transition-all duration-200"
+            style={{
+              backgroundColor: '#fbbf24',
+              border: '1px solid #fbbf24'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#f59e0b';
+              e.currentTarget.style.borderColor = '#f59e0b';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#fbbf24';
+              e.currentTarget.style.borderColor = '#fbbf24';
+            }}
           >
             <Plus className="w-4 h-4" />
             <span>Add Expense</span>
@@ -230,70 +283,70 @@ const ExpenseList = ({ expenses, onEdit, onDelete, onAdd }) => {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="rounded-xl shadow-sm p-6" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333', border: '1px solid #333333' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Total Expenses</p>
-              <p className="text-2xl font-bold text-gray-900">${totalAmount.toLocaleString()}</p>
+              <p className="text-sm font-medium text-gray-400 mb-1">Total Expenses</p>
+              <p className="text-2xl font-bold text-white">${totalAmount.toLocaleString()}</p>
             </div>
-            <div className="p-3 bg-red-100 rounded-lg">
-              <Receipt className="w-6 h-6 text-red-600" />
+            <div className="p-3 rounded-lg" style={{ backgroundColor: '#0a0a0a', border: '1px solid #ff6b6b' }}>
+              <Receipt className="w-6 h-6" style={{ color: '#ff6b6b' }} />
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+
+        <div className="rounded-xl shadow-sm p-6" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333', border: '1px solid #333333' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Total Transactions</p>
-              <p className="text-2xl font-bold text-gray-900">{filteredAndSortedExpenses.length}</p>
+              <p className="text-sm font-medium text-gray-400 mb-1">Total Transactions</p>
+              <p className="text-2xl font-bold text-white">{filteredAndSortedExpenses.length}</p>
             </div>
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Tag className="w-6 h-6 text-blue-600" />
+            <div className="p-3 rounded-lg" style={{ backgroundColor: '#0a0a0a', border: '1px solid #4dabf7' }}>
+              <Tag className="w-6 h-6" style={{ color: '#4dabf7' }} />
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+
+        <div className="rounded-xl shadow-sm p-6" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333', border: '1px solid #333333' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Average Amount</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-gray-400 mb-1">Average Amount</p>
+              <p className="text-2xl font-bold text-white">
                 ${filteredAndSortedExpenses.length ? (totalAmount / filteredAndSortedExpenses.length).toFixed(0) : '0'}
               </p>
             </div>
-            <div className="p-3 bg-amber-100 rounded-lg">
-              <DollarSign className="w-6 h-6 text-amber-600" />
+            <div className="p-3 rounded-lg" style={{ backgroundColor: '#0a0a0a', border: '1px solid #fbbf24' }}>
+              <DollarSign className="w-6 h-6 text-yellow-400" />
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+
+        <div className="rounded-xl shadow-sm p-6" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333', border: '1px solid #333333' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Cash Back Earned</p>
-              <p className="text-2xl font-bold text-green-600">${totalCashBack.toFixed(2)}</p>
+              <p className="text-sm font-medium text-gray-400 mb-1">Cash Back Earned</p>
+              <p className="text-2xl font-bold text-green-400">${totalCashBack.toFixed(2)}</p>
             </div>
-            <div className="p-3 bg-green-100 rounded-lg">
-              <DollarSign className="w-6 h-6 text-green-600" />
+            <div className="p-3 rounded-lg" style={{ backgroundColor: '#0a0a0a', border: '1px solid #22c55e' }}>
+              <DollarSign className="w-6 h-6 text-green-400" />
             </div>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="rounded-xl shadow-sm p-6" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333333' }}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">Filter & Search</h2>
+          <h2 className="text-lg font-semibold text-white">Filter & Search</h2>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="sm:hidden flex items-center space-x-2 text-gray-600"
+            className="sm:hidden flex items-center space-x-2 text-gray-400 hover:text-yellow-400 transition-colors"
           >
             <Filter className="w-4 h-4" />
             <span>Toggle Filters</span>
           </button>
         </div>
-        
+
         <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 ${showFilters ? 'block' : 'hidden sm:grid'}`}>
           {/* Search */}
           <div className="relative">
@@ -303,54 +356,70 @@ const ExpenseList = ({ expenses, onEdit, onDelete, onAdd }) => {
               placeholder="Search vendors or descriptions..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-3 py-2 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              style={{
+                backgroundColor: '#0a0a0a',
+                border: '1px solid #555555'
+              }}
             />
           </div>
-          
+
           {/* Category Filter */}
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            style={{
+              backgroundColor: '#0a0a0a',
+              border: '1px solid #555555'
+            }}
           >
-            <option value="">All Categories</option>
-            {DEFAULT_EXPENSE_CATEGORIES.map(category => (
-              <option key={category.id} value={category.id}>
-                {category.name}
+            <option value="" style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>All Categories</option>
+            {allCategories.map(category => (
+              <option key={category.id} value={category.id} style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>
+                {category.name} {category.isCustom ? '(Custom)' : ''}
               </option>
             ))}
           </select>
-          
+
           {/* Date Range */}
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            style={{
+              backgroundColor: '#0a0a0a',
+              border: '1px solid #555555'
+            }}
           >
-            <option value="all">All Time</option>
-            <option value="current-month">Current Month</option>
-            <option value="last-30-days">Last 30 Days</option>
-            <option value="last-90-days">Last 90 Days</option>
+            <option value="all" style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>All Time</option>
+            <option value="current-month" style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>Current Month</option>
+            <option value="last-30-days" style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>Last 30 Days</option>
+            <option value="last-90-days" style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>Last 90 Days</option>
           </select>
-          
+
           {/* Sort By */}
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            style={{
+              backgroundColor: '#0a0a0a',
+              border: '1px solid #555555'
+            }}
           >
-            <option value="date-desc">Newest First</option>
-            <option value="date-asc">Oldest First</option>
-            <option value="amount-desc">Highest Amount</option>
-            <option value="amount-asc">Lowest Amount</option>
-            <option value="vendor-asc">Vendor A-Z</option>
+            <option value="date-desc" style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>Newest First</option>
+            <option value="date-asc" style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>Oldest First</option>
+            <option value="amount-desc" style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>Highest Amount</option>
+            <option value="amount-asc" style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>Lowest Amount</option>
+            <option value="vendor-asc" style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>Vendor A-Z</option>
           </select>
         </div>
-        
+
         {/* Clear Filters */}
         {(searchTerm || selectedCategory || dateRange !== 'current-month' || sortBy !== 'date-desc') && (
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-            <span className="text-sm text-gray-600">
+          <div className="flex items-center justify-between mt-4 pt-4" style={{ borderTop: '1px solid #333333' }}>
+            <span className="text-sm text-gray-400">
               Showing {filteredAndSortedExpenses.length} of {expenses.length} expenses
             </span>
             <button
@@ -360,7 +429,7 @@ const ExpenseList = ({ expenses, onEdit, onDelete, onAdd }) => {
                 setDateRange('current-month');
                 setSortBy('date-desc');
               }}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="text-sm text-yellow-400 hover:text-yellow-300 font-medium transition-colors"
             >
               Clear All Filters
             </button>
@@ -370,8 +439,8 @@ const ExpenseList = ({ expenses, onEdit, onDelete, onAdd }) => {
 
       {/* Bulk Actions */}
       {selectedExpenses.size > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
-          <span className="text-blue-800 font-medium">
+        <div className="rounded-lg p-4 flex items-center justify-between" style={{ backgroundColor: '#1a1a1a', border: '1px solid #fbbf24' }}>
+          <span className="text-yellow-400 font-medium">
             {selectedExpenses.size} expense{selectedExpenses.size !== 1 ? 's' : ''} selected
           </span>
           <div className="flex items-center space-x-3">
@@ -389,7 +458,7 @@ const ExpenseList = ({ expenses, onEdit, onDelete, onAdd }) => {
                     expense.description || ''
                   ])
                 ].map(row => row.join(',')).join('\n');
-                
+
                 const blob = new Blob([csvContent], { type: 'text/csv' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -398,13 +467,13 @@ const ExpenseList = ({ expenses, onEdit, onDelete, onAdd }) => {
                 a.click();
                 URL.revokeObjectURL(url);
               }}
-              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+              className="text-yellow-400 hover:text-yellow-300 font-medium text-sm transition-colors"
             >
               Export Selected
             </button>
             <button
               onClick={() => setSelectedExpenses(new Set())}
-              className="text-gray-600 hover:text-gray-700"
+              className="text-gray-400 hover:text-white transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -413,40 +482,57 @@ const ExpenseList = ({ expenses, onEdit, onDelete, onAdd }) => {
       )}
 
       {/* Expense List */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="p-6 border-b border-gray-200">
+      <div className="rounded-xl shadow-sm" style={{ backgroundColor: '#1a1a1a', border: '1px solid #333333' }}>
+        <div className="p-6" style={{ borderBottom: '1px solid #333333' }}>
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-white">
               Expense List ({filteredAndSortedExpenses.length})
             </h3>
             <div className="flex items-center space-x-4">
-              <label className="flex items-center space-x-2 text-sm text-gray-600">
+              <label className="flex items-center space-x-2 text-sm text-gray-400">
                 <input
                   type="checkbox"
                   checked={selectedExpenses.size === filteredAndSortedExpenses.length && filteredAndSortedExpenses.length > 0}
                   onChange={handleSelectAll}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded focus:ring-yellow-400 focus:ring-2"
+                  style={{
+                    backgroundColor: '#0a0a0a',
+                    borderColor: '#555555',
+                    color: '#fbbf24'
+                  }}
                 />
                 <span>Select All</span>
               </label>
             </div>
           </div>
         </div>
-        
+
         <div className="p-6">
           {filteredAndSortedExpenses.length === 0 ? (
             <div className="text-center py-12">
               <Receipt className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No expenses found</h3>
+              <h3 className="text-lg font-medium text-white mb-2">No expenses found</h3>
               <p className="text-gray-600 mb-6">
-                {expenses.length === 0 
+                {expenses.length === 0
                   ? "Start by adding your first expense to track your spending."
                   : "Try adjusting your filters to see more results."
                 }
               </p>
               <button
                 onClick={onAdd}
-                className="inline-flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="inline-flex items-center space-x-2 px-4 py-2 text-black font-medium rounded-lg transition-all duration-200"
+                style={{
+                  backgroundColor: '#fbbf24',
+                  border: '1px solid #fbbf24'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f59e0b';
+                  e.currentTarget.style.borderColor = '#f59e0b';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#fbbf24';
+                  e.currentTarget.style.borderColor = '#fbbf24';
+                }}
               >
                 <Plus className="w-4 h-4" />
                 <span>Add First Expense</span>
@@ -460,6 +546,23 @@ const ExpenseList = ({ expenses, onEdit, onDelete, onAdd }) => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Alfred's Expense Wisdom */}
+      <div className="rounded-xl shadow-lg border p-6 text-center" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333' }}>
+        <div className="mb-3">
+          <div className="w-12 h-12 bg-yellow-400 rounded-full mx-auto flex items-center justify-center">
+            <span className="text-xl">🦇</span>
+          </div>
+        </div>
+        <h3 className="text-lg font-semibold text-white mb-2">
+          <span className="text-yellow-400">Alfred's</span> Expense Management
+        </h3>
+        <p className="text-gray-300 italic max-w-xl mx-auto">
+          "Master Wayne, every penny spent wisely is an investment in your future.
+          Track your expenses as meticulously as I maintain Wayne Manor - with precision, purpose, and pride."
+        </p>
+        <p className="text-yellow-400 text-sm mt-2">- Alfred Pennyworth</p>
       </div>
     </div>
   );

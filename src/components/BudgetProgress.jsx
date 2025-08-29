@@ -15,7 +15,7 @@ const BudgetProgress = ({ categories, expensesByCategory }) => {
           <div key={category.id} className="space-y-2">
             <div className="flex justify-between items-center">
               <div className="flex items-center space-x-2">
-                <span className="font-medium text-gray-900">{category.name}</span>
+                <span className="font-medium text-gray-300">{category.name}</span>
                 {isOverBudget && (
                   <AlertTriangle className="w-4 h-4 text-amber-500" />
                 )}

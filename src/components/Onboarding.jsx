@@ -1,306 +1,391 @@
 import React, { useState } from 'react';
-import { 
-  X, 
-  ArrowRight, 
-  ArrowLeft, 
-  Check, 
-  BarChart3, 
-  Receipt, 
-  DollarSign, 
+import {
+  X,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  BarChart3,
+  Receipt,
+  DollarSign,
   Target,
   PiggyBank,
   TrendingUp,
   Calculator,
   Download,
-  Sparkles
+  Sparkles,
+  Star,
+  Award,
+  Zap
 } from 'lucide-react';
 
 const Onboarding = ({ isOpen, onClose, onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [foundEasterEggs, setFoundEasterEggs] = useState(new Set());
+
+  const discoverEasterEgg = (eggId) => {
+    setFoundEasterEggs(prev => new Set([...prev, eggId]));
+  };
 
   const steps = [
     {
-      title: "Welcome to FinanceTracker! 🎉",
-      subtitle: "Your personal financial management companion",
+      title: "Welcome to Wayne Manor's Financial Wing! 🦇",
+      subtitle: "Alfred Pennyworth at your service, Master Wayne",
       content: (
         <div className="text-center space-y-6">
-          <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto">
-            <BarChart3 className="w-12 h-12 text-white" />
+          <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto border-2 border-yellow-400"
+            style={{ background: 'linear-gradient(135deg, #1a1a1a, #333333)' }}>
+            <span className="text-3xl">🦇</span>
           </div>
           <div className="space-y-4">
-            <p className="text-lg text-gray-600">
-              Take control of your finances with our comprehensive expense tracking system.
+            <p className="text-lg text-gray-300">
+              "Master Wayne, I've prepared a comprehensive financial management system worthy of the Wayne family legacy."
             </p>
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center space-x-2 text-green-600">
+              <div className="flex items-center space-x-2 text-yellow-400">
                 <Check className="w-4 h-4" />
-                <span>Track expenses & income</span>
+                <span>Butler-level expense tracking</span>
               </div>
-              <div className="flex items-center space-x-2 text-green-600">
+              <div className="flex items-center space-x-2 text-yellow-400">
                 <Check className="w-4 h-4" />
-                <span>Budget management</span>
+                <span>Wayne Enterprises budget tools</span>
               </div>
-              <div className="flex items-center space-x-2 text-green-600">
+              <div className="flex items-center space-x-2 text-yellow-400">
                 <Check className="w-4 h-4" />
-                <span>Visual analytics</span>
+                <span>Batcave-level analytics</span>
               </div>
-              <div className="flex items-center space-x-2 text-green-600">
+              <div className="flex items-center space-x-2 text-yellow-400">
                 <Check className="w-4 h-4" />
-                <span>Export capabilities</span>
+                <span>Manor record exports</span>
               </div>
             </div>
+          </div>
+          <div className="rounded-lg p-4 border" style={{ backgroundColor: '#1a1a1a', borderColor: '#fbbf24' }}>
+            <p className="text-yellow-400 text-sm">
+              🦇 <strong>Butler's Secret:</strong> I've hidden special Wayne family Easter eggs throughout this tour.
+              Complete all steps to unlock the <strong>Bat-Signal achievement!</strong>
+            </p>
+          </div>
+          <div className="text-xs text-gray-500 italic cursor-pointer"
+            onClick={() => discoverEasterEgg('wayne-tech')}
+            title="Click me!">
+            💡 Easter Egg #1: Look for the hidden "Wayne Tech" references in each step
           </div>
         </div>
       )
     },
     {
-      title: "Dashboard Overview",
-      subtitle: "Your financial command center",
+      title: "Financial Command Center",
+      subtitle: "Your personal Batcave for financial surveillance",
       content: (
         <div className="space-y-6">
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6">
+          <div className="rounded-xl p-6 border" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333', background: 'linear-gradient(135deg, #1a1a1a, #2a2a2a)' }}>
             <div className="flex items-center space-x-3 mb-4">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <BarChart3 className="w-6 h-6 text-blue-600" />
+              <div className="p-2 rounded-lg border" style={{ backgroundColor: '#0a0a0a', borderColor: '#fbbf24' }}>
+                <BarChart3 className="w-6 h-6 text-yellow-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">Dashboard Features</h3>
+              <h3 className="text-lg font-semibold text-white">Command Center Features</h3>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
-                  <DollarSign className="w-4 h-4 text-green-600" />
-                  <span className="text-sm">Monthly income tracking</span>
+                  <DollarSign className="w-4 h-4 text-green-400" />
+                  <span className="text-sm text-gray-300">Monthly income tracking</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Receipt className="w-4 h-4 text-red-600" />
-                  <span className="text-sm">Expense monitoring</span>
+                  <Receipt className="w-4 h-4 text-red-400" />
+                  <span className="text-sm text-gray-300">Expense surveillance</span>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
-                  <PiggyBank className="w-4 h-4 text-purple-600" />
-                  <span className="text-sm">Profit calculations</span>
+                  <PiggyBank className="w-4 h-4 text-blue-400" />
+                  <span className="text-sm text-gray-300">Wayne-level profit analysis</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Target className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm">Savings rate analysis</span>
+                  <Target className="w-4 h-4 text-yellow-400" />
+                  <span className="text-sm text-gray-300">Strategic savings rate</span>
                 </div>
               </div>
             </div>
           </div>
-          <p className="text-gray-600">
-            The dashboard provides a real-time overview of your financial health with interactive charts and key metrics.
+          <p className="text-gray-300">
+            Your dashboard provides real-time financial surveillance with the precision of Wayne Tech monitoring systems.
           </p>
+          <div className="text-center">
+            <button
+              className="text-yellow-400 text-xs hover:text-yellow-300 transition-colors"
+              onClick={() => discoverEasterEgg('batman-quote')}
+            >
+              🦇 "I am the night... and the budget!" - Click for Easter Egg #2
+            </button>
+          </div>
         </div>
       )
     },
     {
-      title: "Track Your Expenses",
-      subtitle: "Detailed expense management made simple",
+      title: "Track Your Manor Expenses",
+      subtitle: "Every butler knows: precision in records, perfection in management",
       content: (
         <div className="space-y-6">
-          <div className="bg-red-50 rounded-xl p-6">
+          <div className="rounded-xl p-6 border" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333' }}>
             <div className="flex items-center space-x-3 mb-4">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <Receipt className="w-6 h-6 text-red-600" />
+              <div className="p-2 rounded-lg border" style={{ backgroundColor: '#0a0a0a', borderColor: '#fbbf24' }}>
+                <Receipt className="w-6 h-6 text-yellow-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">Expense Features</h3>
+              <h3 className="text-lg font-semibold text-white">Expense Management</h3>
             </div>
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
-                <Check className="w-4 h-4 text-green-600" />
-                <span className="text-sm">20+ predefined categories (rent, groceries, utilities, etc.)</span>
+                <Check className="w-4 h-4 text-yellow-400" />
+                <span className="text-sm text-gray-300">Categorize expenses like Wayne Manor departments</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Check className="w-4 h-4 text-green-600" />
-                <span className="text-sm">Payment method tracking with cash back calculation</span>
+                <Check className="w-4 h-4 text-yellow-400" />
+                <span className="text-sm text-gray-300">Smart vendor tracking (including Bat-gadget suppliers 😉)</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Check className="w-4 h-4 text-green-600" />
-                <span className="text-sm">Advanced filtering by date, category, and amount</span>
+                <Check className="w-4 h-4 text-yellow-400" />
+                <span className="text-sm text-gray-300">Payment method tracking with credit card optimization</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Check className="w-4 h-4 text-green-600" />
-                <span className="text-sm">Bulk operations and export functionality</span>
+                <Check className="w-4 h-4 text-yellow-400" />
+                <span className="text-sm text-gray-300">Cash back calculation (even Bruce Wayne loves rewards!)</span>
               </div>
             </div>
           </div>
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <div className="flex items-center space-x-2">
-              <Calculator className="w-5 h-5 text-amber-600" />
-              <span className="font-medium text-amber-800">Pro Tip:</span>
+          <div className="rounded-lg p-4 border" style={{ backgroundColor: '#0a0a0a', borderColor: '#333333' }}>
+            <div className="flex items-center space-x-2 mb-2">
+              <Calculator className="w-4 h-4 text-yellow-400" />
+              <span className="font-medium text-white">Pro Tip from Alfred:</span>
             </div>
-            <p className="text-amber-700 text-sm mt-1">
+            <p className="text-sm text-gray-300">
               Use the cash back calculator to track rewards from your credit cards automatically!
+              <span
+                className="ml-2 text-yellow-400 cursor-pointer hover:text-yellow-300"
+                onClick={() => discoverEasterEgg('alfred-tip')}
+              >
+                (Click here for Alfred's secret expense tip! 🎩)
+              </span>
             </p>
           </div>
         </div>
       )
     },
     {
-      title: "Manage Your Income",
-      subtitle: "Track all your income sources",
+      title: "Manage Your Wayne Enterprises Income",
+      subtitle: "Track all your income sources like a true Wayne",
       content: (
         <div className="space-y-6">
-          <div className="bg-green-50 rounded-xl p-6">
+          <div className="rounded-xl p-6 border" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333' }}>
             <div className="flex items-center space-x-3 mb-4">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <DollarSign className="w-6 h-6 text-green-600" />
+              <div className="p-2 rounded-lg border" style={{ backgroundColor: '#0a0a0a', borderColor: '#fbbf24' }}>
+                <DollarSign className="w-6 h-6 text-green-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">Income Management</h3>
+              <h3 className="text-lg font-semibold text-white">Income Management</h3>
             </div>
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
-                <Check className="w-4 h-4 text-green-600" />
-                <span className="text-sm">Multiple income sources (paychecks, freelance, etc.)</span>
+                <Check className="w-4 h-4 text-green-400" />
+                <span className="text-sm text-gray-300">Multiple income sources (Wayne Enterprises dividends, freelance, etc.)</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Check className="w-4 h-4 text-green-600" />
-                <span className="text-sm">Recurring income tracking</span>
+                <Check className="w-4 h-4 text-green-400" />
+                <span className="text-sm text-gray-300">Recurring income tracking with butler-level precision</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Check className="w-4 h-4 text-green-600" />
-                <span className="text-sm">Expected vs actual income comparison</span>
+                <Check className="w-4 h-4 text-green-400" />
+                <span className="text-sm text-gray-300">Expected vs actual income comparison (Alfred's favorite feature)</span>
               </div>
             </div>
           </div>
-          <p className="text-gray-600">
-            Set up your income sources to get accurate profit calculations and savings rate analysis.
+          <p className="text-gray-300">
+            Set up your income sources to get accurate profit calculations and savings rate analysis worthy of Wayne Manor's standards.
           </p>
+          <div className="text-center p-3 rounded-lg border" style={{ backgroundColor: '#0a0a0a', borderColor: '#333333' }}>
+            <p className="text-xs text-gray-400 mb-2">🦇 Hidden Wayne Tech Feature:</p>
+            <button
+              className="text-yellow-400 text-sm hover:text-yellow-300 transition-colors"
+              onClick={() => discoverEasterEgg('wayne-dividends')}
+            >
+              Income variance analysis tracks your earnings like Wayne Enterprises stock portfolio!
+            </button>
+          </div>
         </div>
       )
     },
     {
-      title: "Budget Tracking",
-      subtitle: "Stay on top of your spending goals",
+      title: "Advanced Financial Intelligence",
+      subtitle: "Analytics worthy of the World's Greatest Detective",
       content: (
         <div className="space-y-6">
-          <div className="bg-purple-50 rounded-xl p-6">
+          <div className="rounded-xl p-6 border" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333' }}>
             <div className="flex items-center space-x-3 mb-4">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Target className="w-6 h-6 text-purple-600" />
+              <div className="p-2 rounded-lg border" style={{ backgroundColor: '#0a0a0a', borderColor: '#fbbf24' }}>
+                <TrendingUp className="w-6 h-6 text-blue-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">Smart Budget Features</h3>
+              <h3 className="text-lg font-semibold text-white">Financial Intelligence</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <BarChart3 className="w-4 h-4 text-blue-400" />
+                  <span className="text-sm text-gray-300">Spending trends analysis</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Target className="w-4 h-4 text-yellow-400" />
+                  <span className="text-sm text-gray-300">Budget variance tracking</span>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Calculator className="w-4 h-4 text-green-400" />
+                  <span className="text-sm text-gray-300">Payment method insights</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Download className="w-4 h-4 text-purple-400" />
+                  <span className="text-sm text-gray-300">Export for Wayne accountants</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-lg p-4 border" style={{ backgroundColor: '#0a0a0a', borderColor: '#fbbf24' }}>
+            <div className="flex items-center space-x-2 mb-2">
+              <Zap className="w-4 h-4 text-yellow-400" />
+              <span className="font-medium text-white">Batman's Secret:</span>
+            </div>
+            <p className="text-sm text-gray-300">
+              The advanced analytics can detect spending patterns faster than Batman can solve a case!
+              <span
+                className="ml-1 text-yellow-400 cursor-pointer hover:text-yellow-300"
+                onClick={() => discoverEasterEgg('detective-mode')}
+              >
+                Click to activate Detective Mode! 🔍
+              </span>
+            </p>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "Wayne Manor Financial Planning Suite",
+      subtitle: "Advanced planning tools for the sophisticated Wayne lifestyle",
+      content: (
+        <div className="space-y-6">
+          <div className="rounded-xl p-6 border" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333' }}>
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="p-2 rounded-lg border" style={{ backgroundColor: '#0a0a0a', borderColor: '#fbbf24' }}>
+                <PiggyBank className="w-6 h-6 text-green-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">Advanced Planning Suite</h3>
             </div>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Groceries Budget</span>
-                  <span>$350 / $500</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-green-500 h-2 rounded-full" style={{ width: '70%' }}></div>
-                </div>
+              <div className="p-3 rounded-lg border" style={{ backgroundColor: '#0a0a0a', borderColor: '#333333' }}>
+                <h4 className="text-sm font-semibold text-yellow-400 mb-1">Surplus Allocation</h4>
+                <p className="text-xs text-gray-300">Allocate profits to Roth IRA, Wayne Foundation donations, Batcave upgrades, and more!</p>
               </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Dining Budget</span>
-                  <span>$95 / $120</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-amber-500 h-2 rounded-full" style={{ width: '79%' }}></div>
-                </div>
+              <div className="p-3 rounded-lg border" style={{ backgroundColor: '#0a0a0a', borderColor: '#333333' }}>
+                <h4 className="text-sm font-semibold text-yellow-400 mb-1">Balance Validation</h4>
+                <p className="text-xs text-gray-300">Ensure every dollar is accounted for with Alfred-level precision</p>
+              </div>
+              <div className="p-3 rounded-lg border" style={{ backgroundColor: '#0a0a0a', borderColor: '#333333' }}>
+                <h4 className="text-sm font-semibold text-yellow-400 mb-1">Income Variance Analysis</h4>
+                <p className="text-xs text-gray-300">Track expected vs actual income like Wayne Enterprises quarterly reports</p>
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span>On Track</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-              <span>Warning</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-              <span>Over Budget</span>
-            </div>
+          <div className="text-center">
+            <button
+              className="text-yellow-400 text-sm hover:text-yellow-300 transition-colors px-4 py-2 border border-yellow-400 rounded-lg"
+              onClick={() => discoverEasterEgg('batcave-fund')}
+            >
+              🦇 Discover the secret "Batcave Maintenance Fund" allocation option!
+            </button>
           </div>
         </div>
       )
     },
     {
-      title: "Analytics & Insights",
-      subtitle: "Understand your spending patterns",
-      content: (
-        <div className="space-y-6">
-          <div className="bg-blue-50 rounded-xl p-6">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <TrendingUp className="w-6 h-6 text-blue-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">Visual Analytics</h3>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Check className="w-4 h-4 text-green-600" />
-                <span className="text-sm">Interactive pie charts for spending breakdown</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Check className="w-4 h-4 text-green-600" />
-                <span className="text-sm">Monthly and yearly trend analysis</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Check className="w-4 h-4 text-green-600" />
-                <span className="text-sm">Budget vs actual comparison charts</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2 text-blue-600">
-            <Download className="w-4 h-4" />
-            <span className="text-sm font-medium">Export your data to Excel or PDF anytime</span>
-          </div>
-        </div>
-      )
-    },
-    {
-      title: "You're All Set! 🚀",
-      subtitle: "Ready to take control of your finances",
+      title: "Congratulations, Master Wayne! 🎉",
+      subtitle: "Your Wayne Manor financial system is ready for service",
       content: (
         <div className="text-center space-y-6">
-          <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center mx-auto">
-            <Sparkles className="w-12 h-12 text-white" />
+          <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto border-2 border-yellow-400"
+            style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }}>
+            <Award className="w-12 h-12 text-black" />
           </div>
+
           <div className="space-y-4">
-            <p className="text-lg text-gray-600">
-              You're ready to start your financial journey! Here's what you can do next:
+            <h3 className="text-xl font-bold text-white">Alfred's Final Wisdom</h3>
+            <p className="text-gray-300 italic">
+              "Master Wayne, you now possess a financial management system worthy of Wayne Manor itself.
+              Use it wisely, and your finances will be as organized as I keep your cave."
             </p>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3 p-3 bg-red-50 rounded-lg">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  <Receipt className="w-4 h-4 text-red-600" />
+          </div>
+
+          {/* Easter Egg Achievement System */}
+          <div className="rounded-lg p-4 border" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333' }}>
+            <h4 className="text-lg font-semibold text-white mb-3">🦇 Easter Egg Collection</h4>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {[
+                { id: 'wayne-tech', name: 'Wayne Tech', icon: '💻' },
+                { id: 'batman-quote', name: 'Batman Quote', icon: '🦇' },
+                { id: 'alfred-tip', name: "Alfred's Tip", icon: '🎩' },
+                { id: 'wayne-dividends', name: 'Wayne Dividends', icon: '💼' },
+                { id: 'detective-mode', name: 'Detective Mode', icon: '🔍' },
+                { id: 'batcave-fund', name: 'Batcave Fund', icon: '🏦' }
+              ].map(egg => (
+                <div key={egg.id} className={`p-2 rounded text-xs text-center border ${foundEasterEggs.has(egg.id)
+                    ? 'border-yellow-400 text-yellow-400'
+                    : 'border-gray-600 text-gray-500'
+                  }`}>
+                  <div>{egg.icon}</div>
+                  <div className="text-xs mt-1">{egg.name}</div>
+                  {foundEasterEggs.has(egg.id) && <Star className="w-3 h-3 mx-auto mt-1" />}
                 </div>
-                <span className="text-sm font-medium">Add your first expense</span>
-              </div>
-              <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <DollarSign className="w-4 h-4 text-green-600" />
-                </div>
-                <span className="text-sm font-medium">Set up your income sources</span>
-              </div>
-              <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <BarChart3 className="w-4 h-4 text-blue-600" />
-                </div>
-                <span className="text-sm font-medium">Explore your dashboard</span>
-              </div>
+              ))}
             </div>
+
+            <div className="text-sm">
+              <p className="text-gray-300">
+                Found: {foundEasterEggs.size}/6 Easter Eggs
+              </p>
+              {foundEasterEggs.size === 6 ? (
+                <div className="mt-2 p-2 rounded border border-yellow-400">
+                  <p className="text-yellow-400 font-bold">🦇 BAT-SIGNAL ACHIEVEMENT UNLOCKED! 🦇</p>
+                  <p className="text-xs text-gray-300 mt-1">
+                    You've discovered all of Alfred's secrets! The Bat-Signal glows proudly over Gotham tonight.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 mt-1">
+                  Return to previous steps to find the remaining Easter eggs!
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-lg p-4 border" style={{ backgroundColor: '#0a0a0a', borderColor: '#fbbf24' }}>
+            <p className="text-yellow-400 text-sm">
+              🎯 <strong>Ready to begin?</strong> Your Wayne Manor financial command center awaits!
+            </p>
           </div>
         </div>
       )
     }
   ];
 
+  const currentStepData = steps[currentStep];
+  const isLastStep = currentStep === steps.length - 1;
+
   const nextStep = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
+    if (!isLastStep) {
+      setCurrentStep(prev => prev + 1);
     }
   };
 
   const prevStep = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+      setCurrentStep(prev => prev - 1);
     }
   };
 
@@ -309,79 +394,85 @@ const Onboarding = ({ isOpen, onClose, onComplete }) => {
     onClose();
   };
 
-  const handleSkip = () => {
-    onClose();
-  };
-
   if (!isOpen) return null;
 
-  const isLastStep = currentStep === steps.length - 1;
-  const currentStepData = steps[currentStep];
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+      <div className="rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333', border: '1px solid' }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              {steps.map((_, index) => (
-                <div
-                  key={index}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    index <= currentStep ? 'bg-blue-600' : 'bg-gray-300'
-                  }`}
-                />
-              ))}
+        <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: '#333333' }}>
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-lg border" style={{ backgroundColor: '#0a0a0a', borderColor: '#fbbf24' }}>
+              <span className="text-yellow-400">🦇</span>
             </div>
-            <span className="text-sm text-gray-500">
-              {currentStep + 1} of {steps.length}
-            </span>
+            <div>
+              <h2 className="text-xl font-semibold text-white">Wayne Manor Financial Tutorial</h2>
+              <p className="text-sm text-gray-400">Step {currentStep + 1} of {steps.length}</p>
+            </div>
           </div>
           <button
-            onClick={handleSkip}
-            className="text-gray-400 hover:text-gray-600 text-sm font-medium"
+            onClick={onClose}
+            className="p-2 hover:opacity-70 rounded-lg transition-colors text-gray-400 hover:text-white"
           >
-            Skip tour
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {currentStepData.title}
-            </h2>
-            <p className="text-gray-600">
-              {currentStepData.subtitle}
-            </p>
-          </div>
+        {/* Progress Bar */}
+        <div className="h-2" style={{ backgroundColor: '#333333' }}>
+          <div
+            className="h-2 transition-all duration-300"
+            style={{
+              backgroundColor: '#fbbf24',
+              width: `${((currentStep + 1) / steps.length) * 100}%`
+            }}
+          />
+        </div>
 
-          <div className="mb-8">
-            {currentStepData.content}
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto max-h-[60vh]">
+          <div className="p-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-white mb-2">
+                {currentStepData.title}
+              </h2>
+              <p className="text-gray-400">
+                {currentStepData.subtitle}
+              </p>
+            </div>
+
+            <div className="mb-8">
+              {currentStepData.content}
+            </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: '#333333', backgroundColor: '#0a0a0a' }}>
           <button
             onClick={prevStep}
             disabled={currentStep === 0}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-              currentStep === 0
-                ? 'text-gray-400 cursor-not-allowed'
-                : 'text-gray-700 hover:bg-gray-200'
-            }`}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${currentStep === 0
+              ? 'text-gray-500 cursor-not-allowed'
+              : 'text-gray-300 hover:bg-gray-700'
+              }`}
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Previous</span>
           </button>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            {/* Easter Egg Counter */}
+            <div className="text-xs text-gray-400 flex items-center space-x-1">
+              <Star className="w-3 h-3" />
+              <span>{foundEasterEggs.size}/6</span>
+            </div>
+
             {!isLastStep ? (
               <button
                 onClick={nextStep}
-                className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex items-center space-x-2 px-6 py-2 rounded-lg transition-colors text-black border border-yellow-400 hover:bg-yellow-500"
+                style={{ backgroundColor: '#fbbf24' }}
               >
                 <span>Next</span>
                 <ArrowRight className="w-4 h-4" />
@@ -389,9 +480,10 @@ const Onboarding = ({ isOpen, onClose, onComplete }) => {
             ) : (
               <button
                 onClick={handleComplete}
-                className="flex items-center space-x-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="flex items-center space-x-2 px-6 py-2 rounded-lg transition-colors text-black border border-green-400 hover:bg-green-500"
+                style={{ backgroundColor: '#10b981' }}
               >
-                <span>Get Started</span>
+                <span>Begin Service</span>
                 <Sparkles className="w-4 h-4" />
               </button>
             )}

@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Calculator } from 'lucide-react';
-import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS, CASH_BACK_RATES } from '../data/defaultCategories';
+import { X, Plus, Calculator, Tag } from 'lucide-react';
+import { PAYMENT_METHODS, CASH_BACK_RATES } from '../data/defaultCategories';
 import { format } from 'date-fns';
+import { useCategories } from '../hooks/useCategories';
+import { useCreditCards } from '../hooks/useCreditCards';
 
-const ExpenseForm = ({ isOpen, onClose, onSubmit, expense = null }) => {
+const ExpenseForm = ({ isOpen, onClose, onSubmit, expense = null, onOpenSettings }) => {
+  const { allCategories, loading: categoriesLoading } = useCategories();
+  const { creditCards, loading: cardsLoading } = useCreditCards();
+
   const [formData, setFormData] = useState({
     vendor: '',
     category: '',
@@ -43,6 +48,18 @@ const ExpenseForm = ({ isOpen, onClose, onSubmit, expense = null }) => {
     }
   }, [expense]);
 
+  // Auto-calculate cash back rate based on selected credit card and category
+  useEffect(() => {
+    if (formData.cardUsed && formData.category && creditCards.length > 0) {
+      const selectedCard = creditCards.find(card => card.id === formData.cardUsed);
+      if (selectedCard && selectedCard.cashBackRates) {
+        // Check for category-specific rate first, then default rate
+        const categoryRate = selectedCard.cashBackRates[formData.category] || selectedCard.cashBackRates['default'] || 0;
+        setFormData(prev => ({ ...prev, cashBackRate: categoryRate }));
+      }
+    }
+  }, [formData.cardUsed, formData.category, creditCards]);
+
   useEffect(() => {
     const amount = parseFloat(formData.amount) || 0;
     const cashBack = amount * formData.cashBackRate;
@@ -51,7 +68,7 @@ const ExpenseForm = ({ isOpen, onClose, onSubmit, expense = null }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     const expenseData = {
       vendor: formData.vendor,
       category: formData.category,
@@ -70,6 +87,15 @@ const ExpenseForm = ({ isOpen, onClose, onSubmit, expense = null }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === 'category' && value === 'manage-categories') {
+      if (onOpenSettings) {
+        onClose(); // Close the expense form
+        onOpenSettings(); // Open settings page
+      }
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: name === 'cashBackRate' ? parseFloat(value) : value
@@ -80,20 +106,20 @@ const ExpenseForm = ({ isOpen, onClose, onSubmit, expense = null }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{ backgroundColor: '#1a1a1a' }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: '#333333' }}>
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Plus className="w-5 h-5 text-blue-600" />
+            <div className="p-2 rounded-lg border" style={{ backgroundColor: '#1a1a1a', borderColor: '#fbbf24' }}>
+              <Plus className="w-5 h-5 text-yellow-400" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              {expense ? 'Edit Expense' : 'Add New Expense'}
+            <h2 className="text-xl font-semibold text-white">
+              {expense ? 'Expense Ledger Update' : <>Record New <span className="text-yellow-400">Expense</span></>}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
           >
             <X className="w-5 h-5 text-gray-400" />
           </button>
@@ -104,7 +130,7 @@ const ExpenseForm = ({ isOpen, onClose, onSubmit, expense = null }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Vendor */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Vendor *
               </label>
               <input
@@ -120,7 +146,7 @@ const ExpenseForm = ({ isOpen, onClose, onSubmit, expense = null }) => {
 
             {/* Category */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Category *
               </label>
               <select
@@ -129,19 +155,23 @@ const ExpenseForm = ({ isOpen, onClose, onSubmit, expense = null }) => {
                 onChange={handleChange}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                disabled={categoriesLoading}
               >
                 <option value="">Select category</option>
-                {DEFAULT_EXPENSE_CATEGORIES.map(category => (
+                {allCategories.map(category => (
                   <option key={category.id} value={category.id}>
-                    {category.name}
+                    {category.name} {category.isCustom ? '(Custom)' : ''}
                   </option>
                 ))}
+                <option value="manage-categories" className="text-blue-300 font-medium">
+                  ⚙️ Manage Categories
+                </option>
               </select>
             </div>
 
             {/* Amount */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Amount *
               </label>
               <div className="relative">
@@ -164,7 +194,7 @@ const ExpenseForm = ({ isOpen, onClose, onSubmit, expense = null }) => {
 
             {/* Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Date *
               </label>
               <input
@@ -179,7 +209,7 @@ const ExpenseForm = ({ isOpen, onClose, onSubmit, expense = null }) => {
 
             {/* Payment Method */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Payment Method
               </label>
               <select
@@ -197,38 +227,67 @@ const ExpenseForm = ({ isOpen, onClose, onSubmit, expense = null }) => {
             </div>
 
             {/* Card Used */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Card Used
-              </label>
-              <input
-                type="text"
-                name="cardUsed"
-                value={formData.cardUsed}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="e.g., Chase Sapphire"
-              />
-            </div>
+            {formData.paymentMethod === 'Credit Card' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Credit Card
+                </label>
+                <select
+                  name="cardUsed"
+                  value={formData.cardUsed}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border rounded-lg text-white transition-colors"
+                  style={{
+                    backgroundColor: '#0a0a0a',
+                    borderColor: '#555555'
+                  }}
+                >
+                  <option value="">Select credit card</option>
+                  {creditCards
+                    .filter(card => card.isActive !== false)
+                    .map(card => (
+                      <option key={card.id} value={card.id}>
+                        {card.name || 'Unknown Card'} (•••• {card.lastFourDigits})
+                      </option>
+                    ))}
+                  {creditCards.length === 0 && (
+                    <option value="" disabled>No credit cards added</option>
+                  )}
+                </select>
+                {creditCards.length === 0 && (
+                  <p className="text-xs text-yellow-400 mt-1">
+                    Add credit cards in Profile → Credit Cards for automatic cash back calculation
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Cash Back Section */}
-          <div className="bg-green-50 rounded-lg p-4 space-y-4">
-            <h3 className="font-medium text-green-900 flex items-center">
+          <div className="rounded-lg p-4 space-y-4 border" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333' }}>
+            <h3 className="font-medium text-yellow-400 flex items-center">
               <Calculator className="w-4 h-4 mr-2" />
               Cash Back Calculation
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-green-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Cash Back Rate
+                  {formData.cardUsed && formData.category && (
+                    <span className="text-xs text-yellow-400 ml-2">(Auto-calculated)</span>
+                  )}
                 </label>
                 <select
                   name="cashBackRate"
                   value={formData.cashBackRate}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                  className="w-full px-3 py-2 border rounded-lg text-white transition-colors"
+                  style={{
+                    backgroundColor: '#0a0a0a',
+                    borderColor: '#555555'
+                  }}
+                  disabled={formData.cardUsed && formData.category}
                 >
                   {CASH_BACK_RATES.map(rate => (
                     <option key={rate.value} value={rate.value}>
@@ -236,14 +295,21 @@ const ExpenseForm = ({ isOpen, onClose, onSubmit, expense = null }) => {
                     </option>
                   ))}
                 </select>
+                {formData.cardUsed && formData.category && (
+                  <p className="text-xs text-green-400 mt-1">
+                    Rate automatically set based on your credit card
+                  </p>
+                )}
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-green-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Cash Back Earned
                 </label>
-                <div className="px-3 py-2 bg-white border border-green-300 rounded-lg text-green-900 font-semibold">
-                  ${calculatedCashBack.toFixed(2)}
+                <div className="px-3 py-2 border rounded-lg" style={{ backgroundColor: '#0a0a0a', borderColor: '#555555' }}>
+                  <span className="text-green-400 font-semibold">
+                    ${calculatedCashBack.toFixed(2)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -251,7 +317,7 @@ const ExpenseForm = ({ isOpen, onClose, onSubmit, expense = null }) => {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Description
             </label>
             <textarea
@@ -265,11 +331,11 @@ const ExpenseForm = ({ isOpen, onClose, onSubmit, expense = null }) => {
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-end space-x-3 pt-4 border-t" style={{ borderColor: '#333333' }}>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="px-4 py-2 text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
             >
               Cancel
             </button>
@@ -282,6 +348,8 @@ const ExpenseForm = ({ isOpen, onClose, onSubmit, expense = null }) => {
           </div>
         </form>
       </div>
+
+
     </div>
   );
 };

@@ -5,6 +5,7 @@ import {
   Receipt, 
   DollarSign, 
   BarChart3, 
+  TrendingUp,
   Settings,
   Menu,
   X,
@@ -12,6 +13,9 @@ import {
   User
 } from 'lucide-react';
 import Dashboard from './components/Dashboard';
+import Analytics from './components/Analytics';
+import FinancialPlanning from './components/FinancialPlanning';
+import Profile from './components/Profile';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import IncomeForm from './components/IncomeForm';
@@ -21,8 +25,10 @@ import AuthModal from './components/AuthModal';
 import { AuthProvider, useAuthContext } from './contexts/AuthContext';
 import { useExpenses } from './hooks/useExpenses';
 import { useIncome } from './hooks/useIncome';
+import { useCategories } from './hooks/useCategories';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 
-type ActiveView = 'dashboard' | 'expenses' | 'income' | 'analytics';
+type ActiveView = 'dashboard' | 'expenses' | 'income' | 'analytics' | 'financial-planning' | 'profile';
 
 const AppContent = () => {
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
@@ -54,6 +60,45 @@ const AppContent = () => {
     updateIncome, 
     deleteIncome 
   } = useIncome();
+
+  const { allCategories } = useCategories();
+
+  // Calculate monthly stats
+  const monthlyStats = React.useMemo(() => {
+    const now = new Date();
+    const currentMonth = {
+      start: startOfMonth(now),
+      end: endOfMonth(now),
+      name: format(now, 'MMMM yyyy')
+    };
+
+    const monthlyExpenses = expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expenseDate >= currentMonth.start && expenseDate <= currentMonth.end;
+    });
+
+    const monthlyIncome = incomeEntries.filter(income => {
+      const incomeDate = new Date(income.date);
+      return incomeDate >= currentMonth.start && incomeDate <= currentMonth.end;
+    });
+
+    const totalExpenses = monthlyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const totalIncome = monthlyIncome.reduce((sum, income) => sum + income.amount, 0);
+    const totalBudget = allCategories.reduce((sum, cat) => sum + cat.budgetAmount, 0);
+
+    const profit = totalIncome - totalExpenses;
+    const savingsRate = totalIncome > 0 ? (profit / totalIncome) * 100 : 0;
+
+    return {
+      totalExpenses,
+      totalIncome,
+      totalBudget,
+      profit,
+      savingsRate,
+      monthlyExpenses,
+      monthlyIncome
+    };
+  }, [expenses, incomeEntries, allCategories]);
 
   // Check authentication and onboarding status
   useEffect(() => {
@@ -166,12 +211,14 @@ const AppContent = () => {
     { id: 'expenses', label: 'Expenses', icon: Receipt },
     { id: 'income', label: 'Income', icon: DollarSign },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'financial-planning', label: 'Financial Planning', icon: TrendingUp },
+    { id: 'profile', label: 'Profile', icon: Settings },
   ];
 
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard':
-        return <Dashboard expenses={expenses} incomeEntries={incomeEntries} />;
+        return <Dashboard expenses={expenses} incomeEntries={incomeEntries} monthlyStats={monthlyStats} />;
       case 'expenses':
         return (
           <ExpenseList
@@ -191,18 +238,22 @@ const AppContent = () => {
           />
         );
       case 'analytics':
-        return <Dashboard expenses={expenses} incomeEntries={incomeEntries} />;
+        return <Analytics expenses={expenses} incomeEntries={incomeEntries} />;
+      case 'financial-planning':
+        return <FinancialPlanning monthlyStats={monthlyStats} incomeEntries={incomeEntries} />;
+      case 'profile':
+        return <Profile />;
       default:
-        return <Dashboard expenses={expenses} incomeEntries={incomeEntries} />;
+        return <Dashboard expenses={expenses} incomeEntries={incomeEntries} monthlyStats={monthlyStats} />;
     }
   };
 
   if (authLoading || expensesLoading || incomeLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{backgroundColor: '#0a0a0a'}}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-300">
             {authLoading ? 'Authenticating...' : 'Loading your financial data...'}
           </p>
         </div>
@@ -213,19 +264,20 @@ const AppContent = () => {
   if (!user) {
     return (
       <>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center" style={{backgroundColor: '#0a0a0a'}}>
           <div className="text-center">
-            <div className="p-8 bg-white rounded-lg shadow-lg max-w-md">
-              <div className="p-4 bg-blue-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <BarChart3 className="w-8 h-8 text-blue-600" />
+            <div className="p-8 rounded-lg shadow-xl max-w-md border" style={{backgroundColor: '#1a1a1a', borderColor: '#333333'}}>
+              <div className="p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center border" style={{backgroundColor: '#1a1a1a', borderColor: '#fbbf24'}}>
+                <BarChart3 className="w-8 h-8 text-yellow-400" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome to FinanceTracker</h1>
-              <p className="text-gray-600 mb-6">Please sign in to manage your expenses and income.</p>
+              <h1 className="text-2xl font-bold text-white mb-2">Welcome to <span className="text-yellow-400">Pennyworth</span></h1>
+              <p className="text-gray-300 mb-6">Your personal financial butler, at your service.</p>
               <button
                 onClick={() => setShowAuthModal(true)}
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="w-full py-3 px-4 rounded-lg transition-all font-medium border hover:bg-yellow-400 hover:text-black"
+                style={{backgroundColor: '#1a1a1a', color: '#fbbf24', borderColor: '#fbbf24'}}
               >
-                Get Started
+                Begin Service
               </button>
             </div>
           </div>
@@ -237,43 +289,43 @@ const AppContent = () => {
 
   if (expensesError || incomeError) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{backgroundColor: '#0a0a0a'}}>
         <div className="text-center">
-          <div className="text-red-500 text-4xl mb-4">⚠️</div>
-          <p className="text-red-600 mb-2">Error loading data</p>
-          <p className="text-gray-600 text-sm">{expensesError || incomeError}</p>
+          <div className="text-red-400 text-4xl mb-4">⚠️</div>
+          <p className="text-red-400 mb-2">Error loading data</p>
+          <p className="text-gray-300 text-sm">{expensesError || incomeError}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen flex" style={{backgroundColor: '#0a0a0a'}}>
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-90 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
+        fixed lg:static inset-y-0 left-0 z-50 w-64 shadow-xl transform transition-transform duration-300 ease-in-out border-r
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      `} style={{backgroundColor: '#111111', borderColor: '#333333'}}>
+        <div className="flex items-center justify-between p-6 border-b" style={{borderColor: '#333333'}}>
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <BarChart3 className="w-6 h-6 text-blue-600" />
+            <div className="p-2 rounded-lg" style={{backgroundColor: '#1a1a1a'}}>
+              <BarChart3 className="w-6 h-6 text-yellow-400" />
             </div>
-            <span className="text-xl font-bold text-gray-900">FinanceTracker</span>
+            <span className="text-xl font-bold text-yellow-400">Pennyworth</span>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-1 hover:bg-gray-100 rounded"
+            className="lg:hidden p-1 rounded transition-colors hover:opacity-70"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
 
@@ -287,9 +339,10 @@ const AppContent = () => {
               }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
                 activeView === item.id
-                  ? 'bg-blue-100 text-blue-700 font-medium'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'font-medium'
+                  : 'text-gray-300 hover:opacity-70'
               }`}
+              style={activeView === item.id ? {backgroundColor: '#1a1a1a', color: '#fbbf24', border: '1px solid #fbbf24'} : {}}
             >
               <item.icon className="w-5 h-5" />
               <span>{item.label}</span>
@@ -298,21 +351,23 @@ const AppContent = () => {
         </nav>
 
         {/* Quick Actions */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t" style={{borderColor: '#333333'}}>
           <div className="space-y-2">
             <button
               onClick={() => setShowExpenseForm(true)}
-              className="w-full flex items-center space-x-3 px-4 py-3 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors"
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all hover:border-yellow-400 border border-transparent"
+              style={{backgroundColor: '#1a1a1a', color: '#f3f4f6'}}
             >
               <Plus className="w-5 h-5" />
-              <span>Add Expense</span>
+              <span>Record Expense</span>
             </button>
             <button
               onClick={() => setShowIncomeForm(true)}
-              className="w-full flex items-center space-x-3 px-4 py-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors"
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all hover:border-yellow-400 border border-transparent"
+              style={{backgroundColor: '#1a1a1a', color: '#f3f4f6'}}
             >
               <Plus className="w-5 h-5" />
-              <span>Add Income</span>
+              <span>Record Income</span>
             </button>
           </div>
         </div>
@@ -321,16 +376,16 @@ const AppContent = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <header className="shadow-sm border-b px-6 py-4" style={{backgroundColor: '#111111', borderColor: '#333333'}}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+                className="lg:hidden p-2 rounded-lg hover:opacity-70 transition-opacity"
               >
-                <Menu className="w-5 h-5 text-gray-600" />
+                <Menu className="w-5 h-5 text-gray-300" />
               </button>
-              <h1 className="text-2xl font-semibold text-gray-900 capitalize">
+              <h1 className="text-2xl font-semibold text-white capitalize">
                 {activeView}
               </h1>
             </div>
@@ -339,14 +394,16 @@ const AppContent = () => {
               <div className="hidden sm:flex items-center space-x-2">
                 <button
                   onClick={() => setShowExpenseForm(true)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  className="flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all hover:bg-yellow-400 hover:text-black hover:border-yellow-400"
+                  style={{backgroundColor: '#1a1a1a', color: '#f3f4f6', borderColor: '#333333'}}
                 >
                   <Plus className="w-4 h-4" />
                   <span className="hidden md:inline">Expense</span>
                 </button>
                 <button
                   onClick={() => setShowIncomeForm(true)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  className="flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all hover:bg-yellow-400 hover:text-black hover:border-yellow-400"
+                  style={{backgroundColor: '#1a1a1a', color: '#f3f4f6', borderColor: '#333333'}}
                 >
                   <Plus className="w-4 h-4" />
                   <span className="hidden md:inline">Income</span>
@@ -355,8 +412,12 @@ const AppContent = () => {
               
               {/* User Menu */}
               <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2 text-gray-700">
-                  <div className="p-2 bg-gray-100 rounded-full">
+                <div
+                  className="flex items-center space-x-2 text-gray-300 cursor-pointer hover:opacity-80"
+                  onClick={() => setActiveView('profile')}
+                  title="Go to Profile"
+                >
+                  <div className="p-2 rounded-full" style={{backgroundColor: '#333333'}}>
                     <User className="w-4 h-4" />
                   </div>
                   <span className="hidden sm:inline text-sm">
@@ -365,7 +426,7 @@ const AppContent = () => {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="flex items-center space-x-2 px-3 py-2 text-gray-400 rounded-lg transition-colors hover:opacity-70"
                   title="Logout"
                 >
                   <LogOut className="w-4 h-4" />
@@ -377,7 +438,7 @@ const AppContent = () => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-6" style={{backgroundColor: '#0a0a0a'}}>
           {renderContent()}
         </main>
       </div>
@@ -391,6 +452,7 @@ const AppContent = () => {
         }}
         onSubmit={editingExpense ? handleUpdateExpense : handleAddExpense}
         expense={editingExpense}
+        onOpenSettings={() => setActiveView('profile')}
       />
 
       <IncomeForm

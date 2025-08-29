@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import { 
-  DollarSign, 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
   PiggyBank,
   Calendar,
   Target,
@@ -12,11 +12,12 @@ import {
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import ExpenseChart from './ExpenseChart';
 import BudgetProgress from './BudgetProgress';
-import { DEFAULT_EXPENSE_CATEGORIES } from '../data/defaultCategories';
+import { useCategories } from '../hooks/useCategories';
 
-const Dashboard = ({ expenses, incomeEntries }) => {
+const Dashboard = ({ expenses, incomeEntries, monthlyStats }) => {
   const [showOnboarding, setShowOnboarding] = React.useState(false);
-  
+  const { allCategories } = useCategories();
+
   const currentMonth = useMemo(() => {
     const now = new Date();
     return {
@@ -26,34 +27,7 @@ const Dashboard = ({ expenses, incomeEntries }) => {
     };
   }, []);
 
-  const monthlyStats = useMemo(() => {
-    const monthlyExpenses = expenses.filter(expense => {
-      const expenseDate = new Date(expense.date);
-      return expenseDate >= currentMonth.start && expenseDate <= currentMonth.end;
-    });
-
-    const monthlyIncome = incomeEntries.filter(income => {
-      const incomeDate = new Date(income.date);
-      return incomeDate >= currentMonth.start && incomeDate <= currentMonth.end;
-    });
-
-    const totalExpenses = monthlyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-    const totalIncome = monthlyIncome.reduce((sum, income) => sum + income.amount, 0);
-    const totalBudget = DEFAULT_EXPENSE_CATEGORIES.reduce((sum, cat) => sum + cat.budgetAmount, 0);
-    
-    const profit = totalIncome - totalExpenses;
-    const savingsRate = totalIncome > 0 ? (profit / totalIncome) * 100 : 0;
-    
-    return {
-      totalExpenses,
-      totalIncome,
-      totalBudget,
-      profit,
-      savingsRate,
-      monthlyExpenses,
-      monthlyIncome
-    };
-  }, [expenses, incomeEntries, currentMonth]);
+  // monthlyStats is now passed as a prop from App.tsx
 
   const expensesByCategory = useMemo(() => {
     const categoryTotals = {};
@@ -63,24 +37,31 @@ const Dashboard = ({ expenses, incomeEntries }) => {
     return categoryTotals;
   }, [monthlyStats.monthlyExpenses]);
 
-  const StatCard = ({ title, value, icon: Icon, trend, color = 'blue' }) => {
+  const StatCard = ({ title, value, icon: Icon, trend, color = 'blue', showCurrency = true }) => {
     const colorClasses = {
-      blue: 'bg-blue-500 text-blue-100',
-      green: 'bg-green-500 text-green-100',
-      red: 'bg-red-500 text-red-100',
-      amber: 'bg-amber-500 text-amber-100'
+      blue: 'bg-blue-600 text-blue-200',
+      green: 'bg-green-600 text-green-200',
+      red: 'bg-red-600 text-red-200',
+      amber: 'bg-amber-600 text-amber-200'
+    };
+
+    const formatValue = () => {
+      if (typeof value === 'number' && showCurrency) {
+        return `$${value.toLocaleString()}`;
+      }
+      return typeof value === 'number' ? value.toLocaleString() : value;
     };
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+      <div className="rounded-xl shadow-lg border p-6 hover:shadow-xl transition-shadow" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333' }}>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-            <p className="text-2xl font-bold text-gray-900">
-              ${typeof value === 'number' ? value.toLocaleString() : value}
+            <p className="text-sm font-medium text-gray-400 mb-1">{title}</p>
+            <p className="text-2xl font-bold text-white">
+              {formatValue()}
             </p>
             {trend && (
-              <p className={`text-xs mt-1 ${trend.positive ? 'text-green-600' : 'text-red-600'}`}>
+              <p className={`text-xs mt-1 ${trend.positive ? 'text-green-400' : 'text-red-400'}`}>
                 {trend.positive ? <TrendingUp className="inline w-3 h-3 mr-1" /> : <TrendingDown className="inline w-3 h-3 mr-1" />}
                 {trend.value}
               </p>
@@ -102,20 +83,20 @@ const Dashboard = ({ expenses, incomeEntries }) => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Your financial overview for {currentMonth.name}</p>
+          <h1 className="text-3xl font-bold text-white">Financial <span className="text-yellow-400">Command Center</span></h1>
+          <p className="text-gray-300 mt-1">Master Wayne's financial overview for {currentMonth.name}</p>
         </div>
         <div className="flex items-center space-x-4">
           {hasCompletedOnboarding && (
             <button
               onClick={() => setShowOnboarding(true)}
-              className="flex items-center space-x-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              className="flex items-center space-x-2 px-3 py-2 text-blue-400 hover:bg-black rounded-lg transition-colors"
             >
               <HelpCircle className="w-4 h-4" />
               <span className="text-sm font-medium">Take Tour</span>
             </button>
           )}
-          <div className="flex items-center space-x-2 text-gray-500">
+          <div className="flex items-center space-x-2 text-gray-400">
             <Calendar className="w-5 h-5" />
             <span className="font-medium">{currentMonth.name}</span>
           </div>
@@ -124,31 +105,31 @@ const Dashboard = ({ expenses, incomeEntries }) => {
 
       {/* Welcome Message for New Users */}
       {!hasData && hasCompletedOnboarding && (
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6">
+        <div className="rounded-xl p-6 border" style={{ background: 'linear-gradient(to right, #1a1a1a, #2a2a2a)', borderColor: '#fbbf24' }}>
           <div className="flex items-start space-x-4">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Sparkles className="w-6 h-6 text-blue-600" />
+            <div className="p-2 rounded-lg border" style={{ backgroundColor: '#1a1a1a', borderColor: '#fbbf24' }}>
+              <Sparkles className="w-6 h-6 text-yellow-400" />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Welcome to FinanceTracker! 🎉
+              <h3 className="text-lg font-semibold text-white mb-2">
+                <span className="text-yellow-400">Pennyworth</span> at your service! 🦇
               </h3>
-              <p className="text-gray-600 mb-4">
-                You're all set up! Start by adding your first expense or income entry to see your financial data come to life.
+              <p className="text-gray-300 mb-4">
+                Allow me to assist you in managing your finances with the utmost care and precision, just as I've done for the Wayne family.
               </p>
               <div className="flex flex-wrap gap-3">
-                <button className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm">
-                  <span>Add First Expense</span>
+                <button className="flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all hover:bg-yellow-400 hover:text-black text-sm" style={{ backgroundColor: '#1a1a1a', color: '#f3f4f6', borderColor: '#333333' }}>
+                  <span>Record First Expense</span>
                 </button>
-                <button className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
-                  <span>Add Income Source</span>
+                <button className="flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all hover:bg-yellow-400 hover:text-black text-sm" style={{ backgroundColor: '#1a1a1a', color: '#f3f4f6', borderColor: '#333333' }}>
+                  <span>Record Income</span>
                 </button>
                 <button
                   onClick={() => setShowOnboarding(true)}
-                  className="flex items-center space-x-2 px-4 py-2 text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors text-sm"
+                  className="flex items-center space-x-2 px-4 py-2 text-yellow-400 border border-yellow-400 rounded-lg hover:bg-yellow-400 hover:text-black transition-all text-sm"
                 >
                   <HelpCircle className="w-4 h-4" />
-                  <span>Take Tour Again</span>
+                  <span>Butler's Tutorial</span>
                 </button>
               </div>
             </div>
@@ -181,50 +162,48 @@ const Dashboard = ({ expenses, incomeEntries }) => {
           value={`${monthlyStats.savingsRate.toFixed(1)}%`}
           icon={Target}
           color="blue"
+          showCurrency={false}
         />
       </div>
 
       {/* Budget vs Actual */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Budget vs Actual</h2>
-        <BudgetProgress 
-          categories={DEFAULT_EXPENSE_CATEGORIES}
+      <div className="rounded-xl shadow-lg border p-6" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333' }}>
+        <h2 className="text-xl font-semibold text-white mb-6">Budget vs Actual</h2>
+        <BudgetProgress
+          categories={allCategories}
           expensesByCategory={expensesByCategory}
         />
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Spending by Category</h2>
-          <ExpenseChart 
+        <div className="rounded-xl shadow-lg border p-6" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333' }}>
+          <h2 className="text-xl font-semibold text-white mb-6">Spending by Category</h2>
+          <ExpenseChart
             data={expensesByCategory}
-            categories={DEFAULT_EXPENSE_CATEGORIES}
+            categories={allCategories}
           />
         </div>
-        
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Financial Overview</h2>
+
+        <div className="rounded-xl shadow-lg border p-6" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333' }}>
+          <h2 className="text-xl font-semibold text-white mb-6">Financial Overview</h2>
           <div className="space-y-4">
-            <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg">
-              <span className="font-medium text-green-900">Total Budget</span>
-              <span className="font-bold text-green-900">${monthlyStats.totalBudget.toLocaleString()}</span>
+            <div className="flex justify-between items-center p-4 bg-green-900 rounded-lg">
+              <span className="font-medium text-green-200">Total Budget</span>
+              <span className="font-bold text-green-200">${monthlyStats.totalBudget.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg">
-              <span className="font-medium text-blue-900">Actual Expenses</span>
-              <span className="font-bold text-blue-900">${monthlyStats.totalExpenses.toLocaleString()}</span>
+            <div className="flex justify-between items-center p-4 bg-blue-900 rounded-lg">
+              <span className="font-medium text-blue-200">Actual Expenses</span>
+              <span className="font-bold text-blue-200">${monthlyStats.totalExpenses.toLocaleString()}</span>
             </div>
-            <div className={`flex justify-between items-center p-4 rounded-lg ${
-              monthlyStats.totalExpenses <= monthlyStats.totalBudget ? 'bg-green-50' : 'bg-red-50'
-            }`}>
-              <span className={`font-medium ${
-                monthlyStats.totalExpenses <= monthlyStats.totalBudget ? 'text-green-900' : 'text-red-900'
+            <div className={`flex justify-between items-center p-4 rounded-lg ${monthlyStats.totalExpenses <= monthlyStats.totalBudget ? 'bg-green-900' : 'bg-red-900'
               }`}>
+              <span className={`font-medium ${monthlyStats.totalExpenses <= monthlyStats.totalBudget ? 'text-green-200' : 'text-red-200'
+                }`}>
                 Budget Remaining
               </span>
-              <span className={`font-bold ${
-                monthlyStats.totalExpenses <= monthlyStats.totalBudget ? 'text-green-900' : 'text-red-900'
-              }`}>
+              <span className={`font-bold ${monthlyStats.totalExpenses <= monthlyStats.totalBudget ? 'text-green-200' : 'text-red-200'
+                }`}>
                 ${(monthlyStats.totalBudget - monthlyStats.totalExpenses).toLocaleString()}
               </span>
             </div>
@@ -232,23 +211,40 @@ const Dashboard = ({ expenses, incomeEntries }) => {
         </div>
       </div>
 
+      {/* Alfred's Dashboard Wisdom */}
+      <div className="rounded-xl shadow-lg border p-6 text-center" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333' }}>
+        <div className="mb-3">
+          <div className="w-12 h-12 bg-yellow-400 rounded-full mx-auto flex items-center justify-center">
+            <span className="text-xl">🦇</span>
+          </div>
+        </div>
+        <h3 className="text-lg font-semibold text-white mb-2">
+          <span className="text-yellow-400">Alfred's</span> Daily Wisdom
+        </h3>
+        <p className="text-gray-300 italic max-w-xl mx-auto">
+          "Master Wayne, a well-organized financial overview is like a well-maintained manor -
+          every detail in its proper place, every expense accounted for, every goal clearly visible."
+        </p>
+        <p className="text-yellow-400 text-sm mt-2">- Alfred Pennyworth</p>
+      </div>
+
       {/* Onboarding */}
       {showOnboarding && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
+          <div className="rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
+            <div className="p-6 border-b" style={{ borderColor: '#333333' }}>
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">Quick Tour</h2>
+                <h2 className="text-xl font-semibold text-white">Quick Tour</h2>
                 <button
                   onClick={() => setShowOnboarding(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:opacity-70 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5 text-gray-400" />
                 </button>
               </div>
             </div>
             <div className="p-6">
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-300 mb-4">
                 Need a refresher? You can always retake the onboarding tour from the help menu or by clicking the "Take Tour" button.
               </p>
               <button
@@ -256,7 +252,7 @@ const Dashboard = ({ expenses, incomeEntries }) => {
                   localStorage.removeItem('onboarding-completed');
                   window.location.reload();
                 }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-600 transition-colors"
               >
                 Restart Onboarding
               </button>
