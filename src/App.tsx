@@ -22,10 +22,16 @@ import IncomeForm from './components/IncomeForm';
 import IncomeList from './components/IncomeList';
 import Onboarding from './components/Onboarding';
 import AuthModal from './components/AuthModal';
+import LoanForm from './components/LoanForm';
+import CreditCardForm from './components/CreditCardForm';
+import SavingsForm from './components/SavingsForm';
 import { AuthProvider, useAuthContext } from './contexts/AuthContext';
 import { useExpenses } from './hooks/useExpenses';
 import { useIncome } from './hooks/useIncome';
 import { useCategories } from './hooks/useCategories';
+import { useCreditCards } from './hooks/useCreditCards';
+import { useLoans } from './hooks/useLoans';
+import { useSavingsAccounts } from './hooks/useSavingsAccounts';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 
 type ActiveView = 'dashboard' | 'expenses' | 'income' | 'analytics' | 'financial-planning' | 'profile';
@@ -39,6 +45,9 @@ const AppContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showLoanForm, setShowLoanForm] = useState(false);
+  const [showCreditCardForm, setShowCreditCardForm] = useState(false);
+  const [showSavingsForm, setShowSavingsForm] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   const { user, loading: authLoading, logout } = useAuthContext();
@@ -60,6 +69,10 @@ const AppContent = () => {
     updateIncome, 
     deleteIncome 
   } = useIncome();
+
+  const { creditCards, addCreditCard } = useCreditCards();
+  const { loans, addLoan } = useLoans();
+  const { savingsAccounts, addSavingsAccount } = useSavingsAccounts();
 
   const { allCategories } = useCategories();
 
@@ -240,7 +253,16 @@ const AppContent = () => {
       case 'analytics':
         return <Analytics expenses={expenses} incomeEntries={incomeEntries} />;
       case 'financial-planning':
-        return <FinancialPlanning monthlyStats={monthlyStats} incomeEntries={incomeEntries} />;
+        return <FinancialPlanning 
+          incomeEntries={incomeEntries}
+          creditCards={creditCards}
+          loans={loans}
+          savingsAccounts={savingsAccounts}
+          onAddIncome={() => setShowIncomeForm(true)}
+          onAddLoan={() => setShowLoanForm(true)}
+          onAddCreditCard={() => setShowCreditCardForm(true)}
+          onAddSavingsAccount={() => setShowSavingsForm(true)}
+        />;
       case 'profile':
         return <Profile />;
       default:
@@ -463,6 +485,24 @@ const AppContent = () => {
         }}
         onSubmit={editingIncome ? handleUpdateIncome : handleAddIncome}
         income={editingIncome}
+      />
+
+      <LoanForm
+        isOpen={showLoanForm}
+        onClose={() => setShowLoanForm(false)}
+        onSubmit={addLoan}
+      />
+
+      <CreditCardForm
+        isOpen={showCreditCardForm}
+        onClose={() => setShowCreditCardForm(false)}
+        onSubmit={addCreditCard}
+      />
+
+      <SavingsForm
+        isOpen={showSavingsForm}
+        onClose={() => setShowSavingsForm(false)}
+        onSubmit={addSavingsAccount}
       />
 
       {/* Onboarding */}

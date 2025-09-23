@@ -38,7 +38,7 @@ export const useIncome = () => {
       (querySnapshot) => {
         const incomeData = [];
         querySnapshot.forEach((doc) => {
-          incomeData.push({ id: doc.id, ...doc.data() });
+          incomeData.push({ ...doc.data(), id: doc.id });
         });
         setIncomeEntries(incomeData);
         setLoading(false);
@@ -60,7 +60,6 @@ export const useIncome = () => {
     try {
       const docRef = await addDoc(collection(db, "income"), {
         ...incomeData,
-        id: uuidv4(),
         userId: user.uid,
         userEmail: user.email,
         createdAt: new Date(),

@@ -3,6 +3,180 @@ import { CreditCard, Plus, X, Edit, Trash2, Star, Gift } from 'lucide-react';
 import { CREDIT_CARD_TYPES, DEFAULT_EXPENSE_CATEGORIES } from '../data/defaultCategories';
 import { useCreditCards } from '../hooks/useCreditCards';
 
+const CardModal = ({
+    editingCard,
+    formData,
+    setFormData,
+    handleSubmit,
+    setShowCardModal,
+    setEditingCard,
+    handleCardTypeChange,
+    getCategoryName
+}) => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="rounded-lg max-w-2xl w-full p-6 border max-h-[90vh] overflow-y-auto" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333' }}>
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                    <div className="p-2 rounded-lg border" style={{ backgroundColor: '#0a0a0a', borderColor: '#fbbf24' }}>
+                        <CreditCard className="w-5 h-5 text-yellow-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white">
+                        {editingCard ? 'Edit' : 'Add'} <span className="text-yellow-400">Credit Card</span>
+                    </h3>
+                </div>
+                <button
+                    onClick={() => {
+                        setShowCardModal(false);
+                        setEditingCard(null);
+                    }}
+                    className="text-gray-400 hover:text-white"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                            Card Type *
+                        </label>
+                        <select
+                            name="cardType"
+                            value={formData.cardType}
+                            onChange={(e) => handleCardTypeChange(e.target.value)}
+                            required
+                            className="w-full px-3 py-2 border rounded-lg text-white"
+                            style={{
+                                backgroundColor: '#0a0a0a',
+                                borderColor: '#555555'
+                            }}
+                        >
+                            <option value="">Select card type</option>
+                            {CREDIT_CARD_TYPES.map(type => (
+                                <option key={type.id} value={type.id}>
+                                    {type.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                            Custom Name
+                        </label>
+                        <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                            className="w-full px-3 py-2 border rounded-lg text-white placeholder-gray-400"
+                            style={{
+                                backgroundColor: '#0a0a0a',
+                                borderColor: '#555555'
+                            }}
+                            placeholder="e.g., My Chase Sapphire"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Reward Type
+                    </label>
+                    <select
+                        name="rewardType"
+                        value={formData.rewardType}
+                        onChange={(e) => setFormData(prev => ({ ...prev, rewardType: e.target.value }))}
+                        className="w-full px-3 py-2 border rounded-lg text-white"
+                        style={{
+                            backgroundColor: '#0a0a0a',
+                            borderColor: '#555555'
+                        }}
+                    >
+                        <option value="cash">Cash Back</option>
+                        <option value="points">Points</option>
+                        <option value="miles">Miles</option>
+                    </select>
+                </div>
+
+                {/* Cash Back Rates */}
+                {formData.cardType && (
+                    <div>
+                        <h4 className="text-md font-semibold text-white mb-3">Cash Back Rates</h4>
+                        <div className="space-y-3">
+                            {Object.entries(formData.cashBackRates).map(([category, rate]) => (
+                                <div key={category} className="flex items-center justify-between p-3 rounded-lg border" style={{ backgroundColor: '#0a0a0a', borderColor: '#333333' }}>
+                                    <span className="text-gray-300">{getCategoryName(category)}</span>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="number"
+                                            value={(rate * 100).toFixed(1)}
+                                            onChange={(e) => {
+                                                const newRate = parseFloat(e.target.value) / 100;
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    cashBackRates: {
+                                                        ...prev.cashBackRates,
+                                                        [category]: newRate
+                                                    }
+                                                }));
+                                            }}
+                                            min="0"
+                                            max="10"
+                                            step="0.1"
+                                            className="w-20 px-2 py-1 border rounded text-white text-sm"
+                                            style={{
+                                                backgroundColor: '#0a0a0a',
+                                                borderColor: '#555555'
+                                            }}
+                                        />
+                                        <span className="text-gray-400 text-sm">%</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex items-center space-x-2">
+                    <input
+                        type="checkbox"
+                        id="isActive"
+                        checked={formData.isActive}
+                        onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                        className="w-4 h-4 text-yellow-400 border-gray-300 rounded focus:ring-yellow-400"
+                    />
+                    <label htmlFor="isActive" className="text-sm text-gray-300">
+                        Active (show in expense forms)
+                    </label>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setShowCardModal(false);
+                            setEditingCard(null);
+                        }}
+                        className="px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700"
+                        style={{ backgroundColor: '#0a0a0a' }}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        className="px-4 py-2 border border-yellow-400 text-yellow-400 rounded-lg hover:bg-yellow-400 hover:text-black transition-colors"
+                        style={{ backgroundColor: '#1a1a1a' }}
+                    >
+                        {editingCard ? 'Update' : 'Add'} Card
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+);
+
 const CreditCardManagement = () => {
     const { creditCards, addCreditCard, updateCreditCard, deleteCreditCard, loading } = useCreditCards();
     const [showCardModal, setShowCardModal] = useState(false);
@@ -90,171 +264,6 @@ const CreditCardManagement = () => {
         const category = DEFAULT_EXPENSE_CATEGORIES.find(cat => cat.id === categoryId);
         return category ? category.name : categoryId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     };
-
-    const CardModal = () => (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="rounded-lg max-w-2xl w-full p-6 border max-h-[90vh] overflow-y-auto" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333' }}>
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-2">
-                        <div className="p-2 rounded-lg border" style={{ backgroundColor: '#0a0a0a', borderColor: '#fbbf24' }}>
-                            <CreditCard className="w-5 h-5 text-yellow-400" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-white">
-                            {editingCard ? 'Edit' : 'Add'} <span className="text-yellow-400">Credit Card</span>
-                        </h3>
-                    </div>
-                    <button
-                        onClick={() => {
-                            setShowCardModal(false);
-                            setEditingCard(null);
-                        }}
-                        className="text-gray-400 hover:text-white"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                                Card Type *
-                            </label>
-                            <select
-                                name="cardType"
-                                value={formData.cardType}
-                                onChange={(e) => handleCardTypeChange(e.target.value)}
-                                required
-                                className="w-full px-3 py-2 border rounded-lg text-white"
-                                style={{
-                                    backgroundColor: '#0a0a0a',
-                                    borderColor: '#555555'
-                                }}
-                            >
-                                <option value="">Select card type</option>
-                                {CREDIT_CARD_TYPES.map(type => (
-                                    <option key={type.id} value={type.id}>
-                                        {type.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                                Custom Name
-                            </label>
-                            <input
-                                type="text"
-                                name="name"
-                                value={formData.name}
-                                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                className="w-full px-3 py-2 border rounded-lg text-white placeholder-gray-400"
-                                style={{
-                                    backgroundColor: '#0a0a0a',
-                                    borderColor: '#555555'
-                                }}
-                                placeholder="e.g., My Chase Sapphire"
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Reward Type
-                        </label>
-                        <select
-                            name="rewardType"
-                            value={formData.rewardType}
-                            onChange={(e) => setFormData(prev => ({ ...prev, rewardType: e.target.value }))}
-                            className="w-full px-3 py-2 border rounded-lg text-white"
-                            style={{
-                                backgroundColor: '#0a0a0a',
-                                borderColor: '#555555'
-                            }}
-                        >
-                            <option value="cash">Cash Back</option>
-                            <option value="points">Points</option>
-                            <option value="miles">Miles</option>
-                        </select>
-                    </div>
-
-                    {/* Cash Back Rates */}
-                    {formData.cardType && (
-                        <div>
-                            <h4 className="text-md font-semibold text-white mb-3">Cash Back Rates</h4>
-                            <div className="space-y-3">
-                                {Object.entries(formData.cashBackRates).map(([category, rate]) => (
-                                    <div key={category} className="flex items-center justify-between p-3 rounded-lg border" style={{ backgroundColor: '#0a0a0a', borderColor: '#333333' }}>
-                                        <span className="text-gray-300">{getCategoryName(category)}</span>
-                                        <div className="flex items-center space-x-2">
-                                            <input
-                                                type="number"
-                                                value={(rate * 100).toFixed(1)}
-                                                onChange={(e) => {
-                                                    const newRate = parseFloat(e.target.value) / 100;
-                                                    setFormData(prev => ({
-                                                        ...prev,
-                                                        cashBackRates: {
-                                                            ...prev.cashBackRates,
-                                                            [category]: newRate
-                                                        }
-                                                    }));
-                                                }}
-                                                min="0"
-                                                max="10"
-                                                step="0.1"
-                                                className="w-20 px-2 py-1 border rounded text-white text-sm"
-                                                style={{
-                                                    backgroundColor: '#0a0a0a',
-                                                    borderColor: '#555555'
-                                                }}
-                                            />
-                                            <span className="text-gray-400 text-sm">%</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="flex items-center space-x-2">
-                        <input
-                            type="checkbox"
-                            id="isActive"
-                            checked={formData.isActive}
-                            onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                            className="w-4 h-4 text-yellow-400 border-gray-300 rounded focus:ring-yellow-400"
-                        />
-                        <label htmlFor="isActive" className="text-sm text-gray-300">
-                            Active (show in expense forms)
-                        </label>
-                    </div>
-
-                    <div className="flex justify-end space-x-3 pt-4">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setShowCardModal(false);
-                                setEditingCard(null);
-                            }}
-                            className="px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700"
-                            style={{ backgroundColor: '#0a0a0a' }}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="px-4 py-2 border border-yellow-400 text-yellow-400 rounded-lg hover:bg-yellow-400 hover:text-black transition-colors"
-                            style={{ backgroundColor: '#1a1a1a' }}
-                        >
-                            {editingCard ? 'Update' : 'Add'} Card
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
 
     if (loading) {
         return (
@@ -382,7 +391,18 @@ const CreditCardManagement = () => {
                 )}
             </div>
 
-            {showCardModal && <CardModal />}
+            {showCardModal && (
+                <CardModal
+                    editingCard={editingCard}
+                    formData={formData}
+                    setFormData={setFormData}
+                    handleSubmit={handleSubmit}
+                    setShowCardModal={setShowCardModal}
+                    setEditingCard={setEditingCard}
+                    handleCardTypeChange={handleCardTypeChange}
+                    getCategoryName={getCategoryName}
+                />
+            )}
         </>
     );
 };

@@ -12,23 +12,22 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { useAuthContext } from "../contexts/AuthContext";
-import { v4 as uuidv4 } from "uuid";
 
-export const useCreditCards = () => {
+export const useSavingsAccounts = () => {
   const { user } = useAuthContext();
-  const [creditCards, setCreditCards] = useState([]);
+  const [savingsAccounts, setSavingsAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!user) {
-      setCreditCards([]);
+      setSavingsAccounts([]);
       setLoading(false);
       return;
     }
 
     const q = query(
-      collection(db, "creditCards"),
+      collection(db, "savingsAccounts"),
       where("userId", "==", user.uid),
       orderBy("createdAt", "desc")
     );
@@ -36,11 +35,11 @@ export const useCreditCards = () => {
     const unsubscribe = onSnapshot(
       q,
       (querySnapshot) => {
-        const cardData = [];
+        const savingsData = [];
         querySnapshot.forEach((doc) => {
-          cardData.push({ ...doc.data(), id: doc.id });
+          savingsData.push({ ...doc.data(), id: doc.id });
         });
-        setCreditCards(cardData);
+        setSavingsAccounts(savingsData);
         setLoading(false);
       },
       (err) => {
@@ -52,16 +51,15 @@ export const useCreditCards = () => {
     return () => unsubscribe();
   }, [user]);
 
-  const addCreditCard = async (cardData) => {
+  const addSavingsAccount = async (accountData) => {
     if (!user) {
-      throw new Error("User must be authenticated to add credit card");
+      throw new Error("User must be authenticated to add a savings account");
     }
 
     try {
-      const docRef = await addDoc(collection(db, "creditCards"), {
-        ...cardData,
+      const docRef = await addDoc(collection(db, "savingsAccounts"), {
+        ...accountData,
         userId: user.uid,
-        userEmail: user.email,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -72,11 +70,15 @@ export const useCreditCards = () => {
     }
   };
 
-  const updateCreditCard = async (id, cardData) => {
+  const updateSavingsAccount = async (id, accountData) => {
+    if (!user) {
+      throw new Error("User must be authenticated to update a savings account");
+    }
+
     try {
-      const cardRef = doc(db, "creditCards", id);
-      await updateDoc(cardRef, {
-        ...cardData,
+      const docRef = doc(db, "savingsAccounts", id);
+      await updateDoc(docRef, {
+        ...accountData,
         updatedAt: new Date(),
       });
     } catch (err) {
@@ -85,10 +87,13 @@ export const useCreditCards = () => {
     }
   };
 
-  const deleteCreditCard = async (id) => {
+  const deleteSavingsAccount = async (id) => {
+    if (!user) {
+      throw new Error("User must be authenticated to delete a savings account");
+    }
+
     try {
-      const cardRef = doc(db, "creditCards", id);
-      await deleteDoc(cardRef);
+      await deleteDoc(doc(db, "savingsAccounts", id));
     } catch (err) {
       setError(err.message);
       throw err;
@@ -96,11 +101,11 @@ export const useCreditCards = () => {
   };
 
   return {
-    creditCards,
+    savingsAccounts,
     loading,
     error,
-    addCreditCard,
-    updateCreditCard,
-    deleteCreditCard,
+    addSavingsAccount,
+    updateSavingsAccount,
+    deleteSavingsAccount,
   };
 };

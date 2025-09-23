@@ -1,9 +1,10 @@
 import React from 'react';
+import PaycheckManagement from './PaycheckManagement';
+import LoanPayment from './LoanPayment';
+import CreditCardPayment from './CreditCardPayment';
 import SavingsAllocation from './SavingsAllocation';
-import BalanceValidation from './BalanceValidation';
-import IncomeVariance from './IncomeVariance';
 
-const FinancialPlanning = ({ monthlyStats, incomeEntries }) => {
+const FinancialPlanning = ({ incomeEntries, creditCards, loans, savingsAccounts, onAddIncome, onAddLoan, onAddCreditCard, onAddSavingsAccount }) => {
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -12,24 +13,17 @@ const FinancialPlanning = ({ monthlyStats, incomeEntries }) => {
                 <p className="text-gray-300 mt-1">Advanced financial analysis and planning tools worthy of Wayne Manor</p>
             </div>
 
-            {/* Financial Analysis Components */}
-            <div className="space-y-6">
-                {/* Surplus Allocation */}
-                <SavingsAllocation
-                    monthlyProfit={monthlyStats.profit}
-                    monthlyStats={monthlyStats}
-                />
+            {/* Paycheck Management */}
+            <PaycheckManagement incomeEntries={incomeEntries} onAdd={onAddIncome} />
 
-                {/* Balance Validation */}
-                <BalanceValidation
-                    monthlyStats={monthlyStats}
-                />
+            {/* Loan Payments */}
+            <LoanPayment loans={loans} onAdd={onAddLoan} />
 
-                {/* Income Variance Analysis */}
-                <IncomeVariance
-                    incomeEntries={incomeEntries}
-                />
-            </div>
+            {/* Credit Card Payments */}
+            <CreditCardPayment creditCards={creditCards} onAdd={onAddCreditCard} />
+
+            {/* Savings Allocation */}
+            <SavingsAllocation savingsAccounts={savingsAccounts} onAdd={onAddSavingsAccount} />
 
             {/* Alfred's Financial Wisdom */}
             <div className="rounded-xl shadow-lg border p-6" style={{ backgroundColor: '#1a1a1a', borderColor: '#333333' }}>

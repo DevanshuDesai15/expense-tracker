@@ -12,23 +12,22 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { useAuthContext } from "../contexts/AuthContext";
-import { v4 as uuidv4 } from "uuid";
 
-export const useCreditCards = () => {
+export const useLoans = () => {
   const { user } = useAuthContext();
-  const [creditCards, setCreditCards] = useState([]);
+  const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!user) {
-      setCreditCards([]);
+      setLoans([]);
       setLoading(false);
       return;
     }
 
     const q = query(
-      collection(db, "creditCards"),
+      collection(db, "loans"),
       where("userId", "==", user.uid),
       orderBy("createdAt", "desc")
     );
@@ -36,11 +35,11 @@ export const useCreditCards = () => {
     const unsubscribe = onSnapshot(
       q,
       (querySnapshot) => {
-        const cardData = [];
+        const loanData = [];
         querySnapshot.forEach((doc) => {
-          cardData.push({ ...doc.data(), id: doc.id });
+          loanData.push({ ...doc.data(), id: doc.id });
         });
-        setCreditCards(cardData);
+        setLoans(loanData);
         setLoading(false);
       },
       (err) => {
@@ -52,16 +51,15 @@ export const useCreditCards = () => {
     return () => unsubscribe();
   }, [user]);
 
-  const addCreditCard = async (cardData) => {
+  const addLoan = async (loanData) => {
     if (!user) {
-      throw new Error("User must be authenticated to add credit card");
+      throw new Error("User must be authenticated to add a loan");
     }
 
     try {
-      const docRef = await addDoc(collection(db, "creditCards"), {
-        ...cardData,
+      const docRef = await addDoc(collection(db, "loans"), {
+        ...loanData,
         userId: user.uid,
-        userEmail: user.email,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -72,11 +70,15 @@ export const useCreditCards = () => {
     }
   };
 
-  const updateCreditCard = async (id, cardData) => {
+  const updateLoan = async (id, loanData) => {
+    if (!user) {
+      throw new Error("User must be authenticated to update a loan");
+    }
+
     try {
-      const cardRef = doc(db, "creditCards", id);
-      await updateDoc(cardRef, {
-        ...cardData,
+      const docRef = doc(db, "loans", id);
+      await updateDoc(docRef, {
+        ...loanData,
         updatedAt: new Date(),
       });
     } catch (err) {
@@ -85,10 +87,13 @@ export const useCreditCards = () => {
     }
   };
 
-  const deleteCreditCard = async (id) => {
+  const deleteLoan = async (id) => {
+    if (!user) {
+      throw new Error("User must be authenticated to delete a loan");
+    }
+
     try {
-      const cardRef = doc(db, "creditCards", id);
-      await deleteDoc(cardRef);
+      await deleteDoc(doc(db, "loans", id));
     } catch (err) {
       setError(err.message);
       throw err;
@@ -96,11 +101,11 @@ export const useCreditCards = () => {
   };
 
   return {
-    creditCards,
+    loans,
     loading,
     error,
-    addCreditCard,
-    updateCreditCard,
-    deleteCreditCard,
+    addLoan,
+    updateLoan,
+    deleteLoan,
   };
 };

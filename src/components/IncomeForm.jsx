@@ -95,9 +95,10 @@ const IncomeForm = ({ isOpen, onClose, onSubmit, income = null }) => {
             {/* Source */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Wayne Enterprises Income Source *
+                Income Source *
               </label>
-              <select
+              <input
+                type="text"
                 name="source"
                 value={formData.source}
                 onChange={handleChange}
@@ -107,14 +108,8 @@ const IncomeForm = ({ isOpen, onClose, onSubmit, income = null }) => {
                   backgroundColor: '#0a0a0a',
                   border: '1px solid #555555'
                 }}
-              >
-                <option value="" style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>Select income source</option>
-                {INCOME_SOURCES.map(source => (
-                  <option key={source.id} value={source.id} style={{ backgroundColor: '#0a0a0a', color: '#ffffff' }}>
-                    {source.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="e.g., Salary, Freelance"
+              />
             </div>
 
             {/* Amount */}
@@ -228,24 +223,6 @@ const IncomeForm = ({ isOpen, onClose, onSubmit, income = null }) => {
             />
           </div>
 
-          {/* Expected Amount Display */}
-          {formData.source && (
-            <div className="rounded-lg p-4" style={{ backgroundColor: '#0a0a0a', border: '1px solid #fbbf24' }}>
-              <h3 className="font-medium text-yellow-400 flex items-center mb-2">
-                <DollarSign className="w-4 h-4 mr-2" />
-                Wayne Enterprises Expected Income Information
-              </h3>
-              {INCOME_SOURCES.find(s => s.id === formData.source) && (
-                <p className="text-gray-300 text-sm">
-                  Expected amount for {INCOME_SOURCES.find(s => s.id === formData.source).name}:
-                  <span className="font-semibold ml-1 text-green-400">
-                    ${INCOME_SOURCES.find(s => s.id === formData.source).expectedAmount.toLocaleString()}
-                  </span>
-                </p>
-              )}
-            </div>
-          )}
-
           {/* Actions */}
           <div className="flex justify-end space-x-3 pt-4" style={{ borderTop: '1px solid #333333' }}>
             <button
@@ -283,7 +260,7 @@ const IncomeForm = ({ isOpen, onClose, onSubmit, income = null }) => {
                 e.currentTarget.style.borderColor = '#fbbf24';
               }}
             >
-              {income ? 'Update Wayne Income' : 'Add Wayne Income'}
+              {income ? 'Update Income' : 'Add Income'}
             </button>
           </div>
         </form>
