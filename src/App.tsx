@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  LayoutDashboard, 
-  Plus, 
-  Receipt, 
-  DollarSign, 
-  BarChart3, 
+import {
+  LayoutDashboard,
+  Plus,
+  Receipt,
+  DollarSign,
+  BarChart3,
   TrendingUp,
+  Home,
   Settings,
   Menu,
   X,
@@ -16,6 +17,7 @@ import Dashboard from './components/Dashboard';
 import Analytics from './components/Analytics';
 import FinancialPlanning from './components/FinancialPlanning';
 import Profile from './components/Profile';
+import SmartHomeDashboard from './components/SmartHomeDashboard';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import IncomeForm from './components/IncomeForm';
@@ -34,7 +36,7 @@ import { useLoans } from './hooks/useLoans';
 import { useSavingsAccounts } from './hooks/useSavingsAccounts';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 
-type ActiveView = 'dashboard' | 'expenses' | 'income' | 'analytics' | 'financial-planning' | 'profile';
+type ActiveView = 'dashboard' | 'expenses' | 'income' | 'analytics' | 'financial-planning' | 'smart-home' | 'profile';
 
 const AppContent = () => {
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
@@ -221,6 +223,7 @@ const AppContent = () => {
 
   const navigationItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'smart-home', label: 'Smart Home', icon: Home },
     { id: 'expenses', label: 'Expenses', icon: Receipt },
     { id: 'income', label: 'Income', icon: DollarSign },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
@@ -232,6 +235,8 @@ const AppContent = () => {
     switch (activeView) {
       case 'dashboard':
         return <Dashboard expenses={expenses} incomeEntries={incomeEntries} monthlyStats={monthlyStats} />;
+      case 'smart-home':
+        return <SmartHomeDashboard />;
       case 'expenses':
         return (
           <ExpenseList
@@ -253,7 +258,7 @@ const AppContent = () => {
       case 'analytics':
         return <Analytics expenses={expenses} incomeEntries={incomeEntries} />;
       case 'financial-planning':
-        return <FinancialPlanning 
+        return <FinancialPlanning
           incomeEntries={incomeEntries}
           creditCards={creditCards}
           loans={loans}

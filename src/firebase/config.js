@@ -2,15 +2,17 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { env } from '../config/env';
 
+// Get Firebase config from environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyD6UNoOWBqzzsin1QbIXbLDh3wfZlyX3kA",
-  authDomain: "pennyworth-bf5bf.firebaseapp.com",
-  projectId: "pennyworth-bf5bf",
-  storageBucket: "pennyworth-bf5bf.firebasestorage.app",
-  messagingSenderId: "829469225872",
-  appId: "1:829469225872:web:fe358c07ab284fbc2cf915",
-  measurementId: "G-1DYL3BHBK0"
+  apiKey: env.firebase.apiKey,
+  authDomain: env.firebase.authDomain,
+  projectId: env.firebase.projectId,
+  storageBucket: env.firebase.storageBucket,
+  messagingSenderId: env.firebase.messagingSenderId,
+  appId: env.firebase.appId,
+  measurementId: env.firebase.measurementId
 };
 
 // Initialize Firebase

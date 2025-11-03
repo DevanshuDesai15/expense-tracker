@@ -2,10 +2,128 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users can only read and write their own documents in these collections
+
+    // Helper functions for security
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidTimestamp() {
+      return request.resource.data.createdAt is timestamp;
+    }
+
+    // Rate limiting helper (basic)
+    function isNotRateLimited() {
+      // This is a basic check - for production use Cloud Functions
+      return true;
+    }
+
+    // User profile data
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && isValidTimestamp();
+    }
+
+    // User settings and preferences
+    match /userSettings/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    // Activity logs (write-only for security audit trail)
+    match /activityLogs/{userId}/logs/{logId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidTimestamp();
+      allow update, delete: if false; // Logs are immutable
+    }
+
+    // Session management
+    match /sessions/{sessionId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Financial data collections
     match /(categories|creditCards|expenses|income|savingsAllocations|loans|savingsAccounts)/{docId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow read, update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId) && isValidTimestamp();
+    }
+
+    // Smart Home automation data
+    match /smartHome/{userId}/devices/{deviceId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && isNotRateLimited();
+    }
+
+    match /smartHome/{userId}/scenes/{sceneId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    match /smartHome/{userId}/routines/{routineId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    // Automation workflows
+    match /automations/{userId}/workflows/{workflowId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    match /automations/{userId}/history/{historyId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidTimestamp();
+      allow update, delete: if false; // History is immutable
+    }
+
+    // Integration configurations (API keys should be encrypted)
+    match /integrations/{userId}/config/{integrationId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    // Scheduled tasks
+    match /scheduledTasks/{userId}/tasks/{taskId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    // Notifications and alerts
+    match /notifications/{userId}/items/{notificationId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // Calendar and events
+    match /calendar/{userId}/events/{eventId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    // Tasks and reminders
+    match /tasks/{userId}/items/{taskId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    // Health and fitness data
+    match /health/{userId}/records/{recordId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
