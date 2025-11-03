@@ -29,6 +29,7 @@ interface ImportMetaEnv {
   readonly VITE_APP_NAME: string;
   readonly VITE_APP_VERSION: string;
   readonly VITE_ENVIRONMENT: string;
+  readonly VITE_AUTHORIZED_EMAIL: string;
   readonly VITE_API_BASE_URL: string;
 }
 

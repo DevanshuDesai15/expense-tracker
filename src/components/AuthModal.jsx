@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, User, Chrome } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
+import { env } from '../config/env';
 
 const AuthModal = ({ isOpen, onClose }) => {
+    // Check if single-user mode is enabled
+    const singleUserMode = !!env.app.authorizedEmail;
     const [isLogin, setIsLogin] = useState(true);
+    const [showDevSignup, setShowDevSignup] = useState(false); // Hidden signup for testing
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -26,9 +30,20 @@ const AuthModal = ({ isOpen, onClose }) => {
         setLoading(true);
 
         try {
+            // In single-user mode, validate email
+            if (singleUserMode && isLogin) {
+                if (formData.email.toLowerCase() !== env.app.authorizedEmail.toLowerCase()) {
+                    throw new Error('Unauthorized email address. This is a single-user system.');
+                }
+            }
+
             if (isLogin) {
                 await signIn(formData.email, formData.password);
             } else {
+                // Signup only allowed in dev mode or if not single-user
+                if (singleUserMode && !showDevSignup) {
+                    throw new Error('Sign up is disabled in single-user mode');
+                }
                 if (formData.password !== formData.confirmPassword) {
                     throw new Error('Passwords do not match');
                 }
@@ -37,6 +52,7 @@ const AuthModal = ({ isOpen, onClose }) => {
             onClose();
         } catch (error) {
             console.error('Authentication error:', error);
+            // Show error to user (error is already set in useAuth hook)
         } finally {
             setLoading(false);
         }
@@ -200,17 +216,41 @@ const AuthModal = ({ isOpen, onClose }) => {
                         </button>
                     </div>
 
-                    <div className="mt-6 text-center">
-                        <p className="text-gray-600">
-                            {isLogin ? "Don't have an account?" : "Already have an account?"}
+                    {/* Hide signup toggle in single-user mode */}
+                    {!singleUserMode && (
+                        <div className="mt-6 text-center">
+                            <p className="text-gray-600">
+                                {isLogin ? "Don't have an account?" : "Already have an account?"}
+                                <button
+                                    onClick={toggleMode}
+                                    className="ml-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                                >
+                                    {isLogin ? 'Sign Up' : 'Sign In'}
+                                </button>
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Single-user mode indicator */}
+                    {singleUserMode && (
+                        <div className="mt-6 text-center">
+                            <p className="text-sm text-gray-500">
+                                Single-user mode enabled
+                            </p>
+                            {/* Hidden dev signup access - press Ctrl+Shift+D */}
                             <button
-                                onClick={toggleMode}
-                                className="ml-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                                onClick={(e) => {
+                                    if (e.ctrlKey && e.shiftKey) {
+                                        setShowDevSignup(!showDevSignup);
+                                        setIsLogin(false);
+                                    }
+                                }}
+                                className="text-xs text-gray-400 mt-2 hidden"
                             >
-                                {isLogin ? 'Sign Up' : 'Sign In'}
+                                Dev Mode
                             </button>
-                        </p>
-                    </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

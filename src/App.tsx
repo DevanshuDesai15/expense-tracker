@@ -294,15 +294,15 @@ const AppContent = () => {
         <div className="min-h-screen flex items-center justify-center" style={{backgroundColor: '#0a0a0a'}}>
           <div className="text-center">
             <div className="p-8 rounded-lg shadow-xl max-w-md border" style={{backgroundColor: '#1a1a1a', borderColor: '#333333'}}>
-              <div className="p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center border" style={{backgroundColor: '#1a1a1a', borderColor: '#fbbf24'}}>
-                <BarChart3 className="w-8 h-8 text-yellow-400" />
+              <div className="p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center border" style={{backgroundColor: '#1a1a1a', borderColor: '#60a5fa'}}>
+                <BarChart3 className="w-8 h-8 text-blue-400" />
               </div>
-              <h1 className="text-2xl font-bold text-white mb-2">Welcome to <span className="text-yellow-400">Pennyworth</span></h1>
-              <p className="text-gray-300 mb-6">Your personal financial butler, at your service.</p>
+              <h1 className="text-2xl font-bold text-white mb-2">Welcome to <span className="text-blue-400">ALFRED</span></h1>
+              <p className="text-gray-300 mb-6">Automated Lifestyle & Financial Resource Executive Director</p>
               <button
                 onClick={() => setShowAuthModal(true)}
-                className="w-full py-3 px-4 rounded-lg transition-all font-medium border hover:bg-yellow-400 hover:text-black"
-                style={{backgroundColor: '#1a1a1a', color: '#fbbf24', borderColor: '#fbbf24'}}
+                className="w-full py-3 px-4 rounded-lg transition-all font-medium border hover:bg-blue-400 hover:text-black"
+                style={{backgroundColor: '#1a1a1a', color: '#60a5fa', borderColor: '#60a5fa'}}
               >
                 Begin Service
               </button>
@@ -344,9 +344,9 @@ const AppContent = () => {
         <div className="flex items-center justify-between p-6 border-b" style={{borderColor: '#333333'}}>
           <div className="flex items-center space-x-2">
             <div className="p-2 rounded-lg" style={{backgroundColor: '#1a1a1a'}}>
-              <BarChart3 className="w-6 h-6 text-yellow-400" />
+              <BarChart3 className="w-6 h-6 text-blue-400" />
             </div>
-            <span className="text-xl font-bold text-yellow-400">Pennyworth</span>
+            <span className="text-xl font-bold text-blue-400">ALFRED</span>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}

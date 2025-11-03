@@ -41,6 +41,7 @@ interface EnvConfig {
     name: string;
     version: string;
     environment: 'development' | 'production' | 'staging';
+    authorizedEmail: string;
     apiBaseUrl: string;
   };
 }
@@ -99,9 +100,10 @@ export const env: EnvConfig = {
   },
 
   app: {
-    name: getEnvVar('VITE_APP_NAME', 'ATLAS'),
+    name: getEnvVar('VITE_APP_NAME', 'ALFRED'),
     version: getEnvVar('VITE_APP_VERSION', '2.0.0'),
     environment: getEnvVar('VITE_ENVIRONMENT', 'development') as EnvConfig['app']['environment'],
+    authorizedEmail: getEnvVar('VITE_AUTHORIZED_EMAIL'),
     apiBaseUrl: getEnvVar('VITE_API_BASE_URL', 'http://localhost:5000'),
   },
 };
