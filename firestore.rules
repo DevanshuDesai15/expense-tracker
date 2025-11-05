@@ -50,7 +50,37 @@ service cloud.firestore {
     }
 
     // Financial data collections
-    match /(categories|creditCards|expenses|income|savingsAllocations|loans|savingsAccounts)/{docId} {
+    match /categories/{docId} {
+      allow read, update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId) && isValidTimestamp();
+    }
+
+    match /creditCards/{docId} {
+      allow read, update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId) && isValidTimestamp();
+    }
+
+    match /expenses/{docId} {
+      allow read, update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId) && isValidTimestamp();
+    }
+
+    match /income/{docId} {
+      allow read, update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId) && isValidTimestamp();
+    }
+
+    match /savingsAllocations/{docId} {
+      allow read, update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId) && isValidTimestamp();
+    }
+
+    match /loans/{docId} {
+      allow read, update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId) && isValidTimestamp();
+    }
+
+    match /savingsAccounts/{docId} {
       allow read, update, delete: if isAuthenticated() && isOwner(resource.data.userId);
       allow create: if isAuthenticated() && isOwner(request.resource.data.userId) && isValidTimestamp();
     }

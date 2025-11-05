@@ -1,0 +1,282 @@
+{
+  "name": "Advanced_Article_Intelligence_Extractor",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Advanced Article Intelligence System\n\n### Features:\n- **Tavily** for clean content extraction\n- **OpenAI GPT-4** for deep analysis:\n  - Company identification & relationships\n  - Executive/employee associations\n  - Financial data & metrics\n  - Strategic initiatives\n  - Competitive landscape\n  - Risk factors & opportunities\n  - Sentiment analysis\n  - Industry trends\n  - Predictions & forecasts\n\n### Setup:\n1. Add Tavily API key\n2. Add OpenAI API key\n3. Configure email/storage\n4. Add article URLs\n5. Execute workflow",
+        "height": 420,
+        "width": 500
+      },
+      "id": "instructions-node",
+      "name": "Workflow Instructions",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-700, -400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Add your article URLs here\nconst urls = [\n  \"https://www.moroccoworldnews.com/2025/09/259353/moroccos-35-15-billion-green-hydrogen-gamble-ambitious-plans-amid-market-doubts/\",\n  // Add more URLs as needed\n];\n\nreturn urls.map(url => ({\n  json: {\n    article_url: url,\n    extraction_id: Math.random().toString(36).substring(7),\n    timestamp: new Date().toISOString()\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-500, 0],
+      "id": "input-urls",
+      "name": "Input Article URLs"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/extract",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"api_key\": \"{{$credentials.tavilyApiKey}}\",\n  \"urls\": [\"{{ $json.article_url }}\"],\n  \"include_raw_content\": false,\n  \"include_images\": false,\n  \"include_answer\": true,\n  \"include_summary\": true\n}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "tavily-extract",
+      "name": "Extract Article Content (Tavily)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [-300, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "tavily-credentials",
+          "name": "Tavily API Credentials"
+        }
+      },
+      "notes": "Tavily extracts clean content from article"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process Tavily extraction response\nconst response = $input.first().json;\nconst originalData = $input.first().json;\n\nlet extractedContent = {\n  article_url: originalData.article_url,\n  extraction_id: originalData.extraction_id,\n  title: '',\n  content: '',\n  author: '',\n  published_date: '',\n  summary: '',\n  raw_content_length: 0\n};\n\ntry {\n  if (response.results && response.results[0]) {\n    const result = response.results[0];\n    \n    extractedContent.title = result.title || '';\n    extractedContent.content = result.text || result.content || '';\n    extractedContent.author = result.author || '';\n    extractedContent.published_date = result.published_date || '';\n    extractedContent.summary = result.summary || response.answer || '';\n    extractedContent.raw_content_length = extractedContent.content.length;\n    \n    // Add metadata if available\n    if (result.metadata) {\n      extractedContent.metadata = result.metadata;\n    }\n  }\n} catch (error) {\n  console.error('Error processing Tavily response:', error);\n  extractedContent.error = error.message;\n}\n\n// Ensure content is not too long for OpenAI\nconst maxLength = 30000; // GPT-4 can handle more\nif (extractedContent.content.length > maxLength) {\n  extractedContent.content = extractedContent.content.substring(0, maxLength) + '...';\n  extractedContent.truncated = true;\n}\n\nreturn extractedContent;"
+      },
+      "id": "process-tavily",
+      "name": "Process Tavily Extraction",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-100, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{$credentials.openaiApiKey}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"model\": \"gpt-4-turbo-preview\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an expert business intelligence analyst. Extract comprehensive information from articles with focus on companies, people, relationships, and business insights. Be thorough and extract ALL relevant information, including implicit relationships and context.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Analyze this article and extract comprehensive intelligence:\\n\\nTitle: {{ $json.title }}\\n\\nContent: {{ $json.content }}\\n\\nProvide a detailed JSON response with this structure:\\n{\\n  \\\"companies\\\": [\\n    {\\n      \\\"name\\\": \\\"Company name\\\",\\n      \\\"type\\\": \\\"Company/Startup/Corporation/Government/NGO/etc\\\",\\n      \\\"industry\\\": \\\"Industry sector\\\",\\n      \\\"role_in_article\\\": \\\"Main subject/Partner/Competitor/Investor/etc\\\",\\n      \\\"headquarters\\\": \\\"Location if mentioned\\\",\\n      \\\"key_people\\\": [\\\"List of associated people from article\\\"],\\n      \\\"financial_data\\\": {\\n        \\\"revenue\\\": \\\"If mentioned\\\",\\n        \\\"funding\\\": \\\"Investment amounts\\\",\\n        \\\"valuation\\\": \\\"If mentioned\\\",\\n        \\\"other_metrics\\\": []\\n      },\\n      \\\"projects\\\": [\\\"Key initiatives or projects mentioned\\\"],\\n      \\\"partnerships\\\": [\\\"Partner companies mentioned\\\"],\\n      \\\"context\\\": \\\"Detailed context about their mention\\\"\\n    }\\n  ],\\n  \\\"people\\\": [\\n    {\\n      \\\"name\\\": \\\"Full name\\\",\\n      \\\"title\\\": \\\"Job title/position\\\",\\n      \\\"company\\\": \\\"Their company\\\",\\n      \\\"role_in_article\\\": \\\"Speaker/Subject/Expert/etc\\\",\\n      \\\"quotes\\\": [\\\"Direct quotes if any\\\"],\\n      \\\"key_points\\\": [\\\"Main points they made\\\"],\\n      \\\"contact_hints\\\": \\\"Any contact information hints\\\",\\n      \\\"expertise\\\": \\\"Their area of expertise\\\"\\n    }\\n  ],\\n  \\\"locations\\\": [\\n    {\\n      \\\"name\\\": \\\"Location name\\\",\\n      \\\"type\\\": \\\"Country/City/Region/Facility\\\",\\n      \\\"significance\\\": \\\"Why it's important\\\",\\n      \\\"associated_companies\\\": [\\\"Companies linked to this location\\\"]\\n    }\\n  ],\\n  \\\"financial_insights\\\": {\\n    \\\"investments_mentioned\\\": [\\n      {\\n        \\\"amount\\\": \\\"Investment amount\\\",\\n        \\\"investor\\\": \\\"Who invested\\\",\\n        \\\"recipient\\\": \\\"Who received\\\",\\n        \\\"purpose\\\": \\\"What for\\\",\\n        \\\"date\\\": \\\"When\\\"\\n      }\\n    ],\\n    \\\"market_size\\\": \\\"Market size data if mentioned\\\",\\n    \\\"financial_metrics\\\": [\\\"Other financial data points\\\"]\\n  },\\n  \\\"key_facts\\\": [\\\"Important facts and figures\\\"],\\n  \\\"industry_insights\\\": {\\n    \\\"trends\\\": [\\\"Industry trends mentioned\\\"],\\n    \\\"challenges\\\": [\\\"Challenges or risks discussed\\\"],\\n    \\\"opportunities\\\": [\\\"Opportunities identified\\\"],\\n    \\\"predictions\\\": [\\\"Future predictions or forecasts\\\"]\\n  },\\n  \\\"relationships\\\": [\\n    {\\n      \\\"entity1\\\": \\\"Company/Person\\\",\\n      \\\"relationship_type\\\": \\\"Partnership/Investment/Competition/etc\\\",\\n      \\\"entity2\\\": \\\"Company/Person\\\",\\n      \\\"details\\\": \\\"Relationship details\\\"\\n    }\\n  ],\\n  \\\"sentiment_analysis\\\": {\\n    \\\"overall_tone\\\": \\\"Positive/Negative/Neutral/Mixed\\\",\\n    \\\"key_sentiments\\\": [\\n      {\\n        \\\"subject\\\": \\\"Company or topic\\\",\\n        \\\"sentiment\\\": \\\"Positive/Negative/Neutral\\\",\\n        \\\"reason\\\": \\\"Why this sentiment\\\"\\n      }\\n    ]\\n  },\\n  \\\"timeline\\\": [\\n    {\\n      \\\"date\\\": \\\"Date or timeframe\\\",\\n      \\\"event\\\": \\\"What happened or will happen\\\"\\n    }\\n  ],\\n  \\\"action_items\\\": [\\\"Potential follow-up actions based on article\\\"],\\n  \\\"summary\\\": \\\"Executive summary of the article\\\",\\n  \\\"article_metadata\\\": {\\n    \\\"main_topic\\\": \\\"Primary subject\\\",\\n    \\\"subtopics\\\": [\\\"Secondary topics\\\"],\\n    \\\"article_type\\\": \\\"News/Analysis/Opinion/Report\\\",\\n    \\\"credibility_indicators\\\": [\\\"Sources cited, data quality, etc\\\"]\\n  }\\n}\"\n    }\n  ],\n  \"temperature\": 0.2,\n  \"max_tokens\": 4000,\n  \"response_format\": { \"type\": \"json_object\" }\n}",
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "id": "openai-analysis",
+      "name": "Deep Analysis (OpenAI GPT-4)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [100, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "openai-credentials",
+          "name": "OpenAI API Credentials"
+        }
+      },
+      "notes": "Comprehensive intelligence extraction"
+    }, 
+   {
+      "parameters": {
+        "jsCode": "// Parse OpenAI response and combine with Tavily data\nconst openaiResponse = $input.first().json;\nconst tavilyData = $input.first().json;\n\nlet analysis = {};\n\ntry {\n  // Parse OpenAI response\n  let openaiContent;\n  if (openaiResponse.choices && openaiResponse.choices[0]) {\n    openaiContent = JSON.parse(openaiResponse.choices[0].message.content);\n  } else {\n    throw new Error('Invalid OpenAI response structure');\n  }\n  \n  // Combine with original data\n  analysis = {\n    ...openaiContent,\n    article_url: tavilyData.article_url,\n    article_title: tavilyData.title,\n    extraction_id: tavilyData.extraction_id,\n    extraction_timestamp: new Date().toISOString(),\n    tavily_summary: tavilyData.summary,\n    content_length: tavilyData.raw_content_length,\n    published_date: tavilyData.published_date,\n    author: tavilyData.author\n  };\n  \n  // Enrich with counts\n  analysis.statistics = {\n    companies_found: (analysis.companies || []).length,\n    people_found: (analysis.people || []).length,\n    locations_found: (analysis.locations || []).length,\n    relationships_found: (analysis.relationships || []).length,\n    financial_datapoints: (analysis.financial_insights?.investments_mentioned || []).length,\n    key_facts: (analysis.key_facts || []).length\n  };\n  \n} catch (error) {\n  console.error('Error parsing analysis:', error);\n  analysis = {\n    error: error.message,\n    article_url: tavilyData.article_url,\n    article_title: tavilyData.title,\n    extraction_failed: true\n  };\n}\n\nreturn analysis;"
+      },
+      "id": "combine-analysis",
+      "name": "Combine Analysis Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [300, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Create comprehensive intelligence report with HTML formatting\nconst reportData = $input.first().json;\n\n// Generate HTML report\nlet htmlReport = `\n<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; color: #1a1a1a; background: #f5f5f5; }\n    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }\n    .header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 40px; border-radius: 12px 12px 0 0; }\n    .main-content { background: white; padding: 40px; border-radius: 0 0 12px 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }\n    .section { margin: 30px 0; }\n    .section-title { font-size: 22px; color: #1e3c72; margin-bottom: 20px; }\n    .company-card, .person-card { background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 15px; }\n    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; margin-right: 8px; }\n    .badge-industry { background: #e6f3ff; color: #0066cc; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>🔍 Advanced Intelligence Analysis Report</h1>\n      <p>Generated: ${new Date().toLocaleString()}</p>\n    </div>\n    <div class=\"main-content\">\n      <h2>Article: ${reportData.article_title || 'Analysis Report'}</h2>\n      <p><strong>URL:</strong> ${reportData.article_url}</p>\n      \n      <div class=\"section\">\n        <h2 class=\"section-title\">📊 Summary Statistics</h2>\n        <p>Companies: ${(reportData.companies || []).length}</p>\n        <p>People: ${(reportData.people || []).length}</p>\n        <p>Key Facts: ${(reportData.key_facts || []).length}</p>\n      </div>\n      \n      ${(reportData.companies || []).length > 0 ? `\n      <div class=\"section\">\n        <h2 class=\"section-title\">🏢 Companies</h2>\n        ${(reportData.companies || []).map(company => `\n        <div class=\"company-card\">\n          <h3>${company.name}</h3>\n          <span class=\"badge badge-industry\">${company.industry || company.type || 'Organization'}</span>\n          <p>${company.context || ''}</p>\n        </div>\n        `).join('')}\n      </div>\n      ` : ''}\n      \n      ${(reportData.people || []).length > 0 ? `\n      <div class=\"section\">\n        <h2 class=\"section-title\">👥 Key People</h2>\n        ${(reportData.people || []).map(person => `\n        <div class=\"person-card\">\n          <h3>${person.name}</h3>\n          <p><strong>${person.title || 'Position Unknown'}</strong> ${person.company ? `at ${person.company}` : ''}</p>\n        </div>\n        `).join('')}\n      </div>\n      ` : ''}\n      \n      ${(reportData.key_facts || []).length > 0 ? `\n      <div class=\"section\">\n        <h2 class=\"section-title\">📌 Key Facts</h2>\n        <ul>\n          ${(reportData.key_facts || []).map(fact => `<li>${fact}</li>`).join('')}\n        </ul>\n      </div>\n      ` : ''}\n    </div>\n  </div>\n</body>\n</html>`;\n\n// Create text version\nlet textReport = `ADVANCED INTELLIGENCE ANALYSIS REPORT\\n${'='.repeat(50)}\\n\\n`;\ntextReport += `Title: ${reportData.article_title || 'Analysis Report'}\\n`;\ntextReport += `URL: ${reportData.article_url}\\n`;\ntextReport += `Generated: ${new Date().toLocaleString()}\\n\\n`;\n\nif ((reportData.companies || []).length > 0) {\n  textReport += `COMPANIES:\\n`;\n  (reportData.companies || []).forEach(c => {\n    textReport += `- ${c.name} (${c.type || c.industry || 'Organization'})\\n`;\n  });\n  textReport += `\\n`;\n}\n\nif ((reportData.people || []).length > 0) {\n  textReport += `KEY PEOPLE:\\n`;\n  (reportData.people || []).forEach(p => {\n    textReport += `- ${p.name}, ${p.title || 'Unknown'} at ${p.company || 'Unknown'}\\n`;\n  });\n}\n\nreturn {\n  html_report: htmlReport,\n  text_report: textReport,\n  subject: `Intelligence Report: ${(reportData.article_title || 'Article Analysis').substring(0, 60)}`,\n  extraction_id: reportData.extraction_id,\n  timestamp: new Date().toISOString()\n};"
+      },
+      "id": "create-final-report",
+      "name": "Create Final Intelligence Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 0]
+    },  
+  {
+      "parameters": {
+        "fromEmail": "{{$credentials.fromEmail}}",
+        "toEmail": "{{$credentials.toEmail}}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html_report }}",
+        "options": {
+          "attachments": "={{$json.text_report ? [{\"name\": \"report.txt\", \"content\": Buffer.from($json.text_report).toString('base64')}] : []}}"
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [700, 0],
+      "id": "send-email",
+      "name": "Send Intelligence Report",
+      "credentials": {
+        "smtp": {
+          "id": "smtp-credentials",
+          "name": "SMTP Email Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "string"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Intelligence_Reports",
+          "mode": "string"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Extraction_ID": "={{ $json.extraction_id }}",
+            "Article_URL": "={{ $json.article_url }}",
+            "Article_Title": "={{ $json.article_title }}",
+            "Companies_Count": "={{ $json.companies ? $json.companies.length : 0 }}",
+            "People_Count": "={{ $json.people ? $json.people.length : 0 }}",
+            "Key_Facts_Count": "={{ $json.key_facts ? $json.key_facts.length : 0 }}",
+            "Timestamp": "={{ $json.timestamp }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "log-to-sheets",
+      "name": "Log to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [700, 150],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets OAuth"
+        }
+      },
+      "continueOnFail": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Input Article URLs": {
+      "main": [
+        [
+          {
+            "node": "Extract Article Content (Tavily)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Article Content (Tavily)": {
+      "main": [
+        [
+          {
+            "node": "Process Tavily Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Tavily Extraction": {
+      "main": [
+        [
+          {
+            "node": "Deep Analysis (OpenAI GPT-4)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deep Analysis (OpenAI GPT-4)": {
+      "main": [
+        [
+          {
+            "node": "Combine Analysis Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Analysis Results": {
+      "main": [
+        [
+          {
+            "node": "Create Final Intelligence Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Final Intelligence Report": {
+      "main": [
+        [
+          {
+            "node": "Send Intelligence Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "versionId": "advanced-v3",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "advanced-intelligence-extractor"
+  },
+  "id": "AdvancedIntelligenceExtractor",
+  "tags": ["intelligence", "extraction", "tavily", "openai", "gpt-4", "analysis", "enrichment"]
+}

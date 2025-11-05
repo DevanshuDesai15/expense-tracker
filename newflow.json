@@ -1,0 +1,618 @@
+{
+  "name": "WebsiteData_Enhanced",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## News Article Contact Extractor - Enhanced\n\n### How to use:\n1. Add your API keys in the credentials:\n   - OpenAI API Key\n   - Tavily API Key\n2. Paste article URLs in the 'Article URLs' node\n3. Click 'Execute Workflow'\n4. Results will be sent via email/Teams\n\n### Features:\n- OpenAI GPT-4 for entity extraction\n- Tavily for enhanced web search\n- Company and people identification\n- Contact information discovery\n\n### Supported sites:\n- Morocco World News\n- Most news websites\n- Blog articles",
+        "height": 400,
+        "width": 500
+      },
+      "id": "95c45e69-21b5-4569-b32c-6bd0045c83be",
+      "name": "Instructions",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        -352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Add your URLs here, one per line\nconst urls = [\n  \"https://www.moroccoworldnews.com/2025/09/259353/moroccos-35-15-billion-green-hydrogen-gamble-ambitious-plans-amid-market-doubts/\",\n  // Add more URLs here as needed\n];\n\nreturn urls.map(url => ({\n  json: {\n    article_url: url,\n    link: url\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -528,
+        64
+      ],
+      "id": "7404d3ff-6e41-4c97-b221-16bcf4323602",
+      "name": "Article URLs Input"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "article_url",
+        "options": {}
+      },
+      "id": "bd182198-3f66-4c33-a7cd-4885bc9ee1f9",
+      "name": "Split URLs",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 3,
+      "position": [
+        -288,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.article_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "en-US,en;q=0.5"
+            },
+            {
+              "name": "Accept-Encoding",
+              "value": "gzip, deflate, br"
+            },
+            {
+              "name": "DNT",
+              "value": "1"
+            },
+            {
+              "name": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "name": "Upgrade-Insecure-Requests",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "5090aee0-c53a-4c2c-b29b-ff355c6b154c",
+      "name": "Fetch Article Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -96,
+        64
+      ],
+      "notes": "Fetches the HTML content of the article"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract text from HTML and clean it\nconst inputData = $input.first().json;\nlet url = inputData.article_url || '';\nconst htmlRaw = inputData.data || inputData.body || inputData || '';\n\nlet htmlString = '';\nif (typeof htmlRaw === 'object' && htmlRaw.data) {\n    htmlString = htmlRaw.data;\n} else if (typeof htmlRaw === 'object') {\n    htmlString = JSON.stringify(htmlRaw);\n} else {\n    htmlString = htmlRaw.toString();\n}\n\n// Remove script and style elements\nlet text = htmlString.replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi, '');\ntext = text.replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi, '');\n\n// Extract title\nlet title = '';\nconst titleMatch = text.match(/<title[^>]*>([^<]*)<\\/title>/i);\nif (titleMatch) {\n    title = titleMatch[1];\n} else {\n    const h1Match = text.match(/<h1[^>]*>([^<]*)<\\/h1>/i);\n    if (h1Match) {\n        title = h1Match[1];\n    }\n}\n\n// Clean HTML entities from title\ntitle = title.replace(/&#039;/g, \"'\");\ntitle = title.replace(/&quot;/g, '\"');\ntitle = title.replace(/&amp;/g, '&');\ntitle = title.replace(/&lt;/g, '<');\ntitle = title.replace(/&gt;/g, '>');\ntitle = title.replace(/&[^;]+;/g, ' ');\ntitle = title.replace(/\\s+/g, ' ').trim();\n\n// Extract meta description\nlet description = '';\nconst descMatch = text.match(/<meta[^>]*name=[\"']description[\"'][^>]*content=[\"']([^\"']*)[\"']/i);\nif (descMatch) {\n    description = descMatch[1];\n}\n\n// Extract body text\nlet mainContent = '';\nconst articlePatterns = [\n    /<article[^>]*>([\\s\\S]*?)<\\/article>/i,\n    /<div[^>]*class=[\"'][^\"']*content-inner[^\"']*[\"'][^>]*>([\\s\\S]*?)<\\/div>/gi,\n    /<div[^>]*class=[\"'][^\"']*entry-content[^\"']*[\"'][^>]*>([\\s\\S]*?)<\\/div>/gi,\n    /<div[^>]*class=[\"'][^\"']*article[^\"']*[\"'][^>]*>([\\s\\S]*?)<\\/div>/i,\n    /<main[^>]*>([\\s\\S]*?)<\\/main>/i,\n    /<div[^>]*id=[\"']content[\"'][^>]*>([\\s\\S]*?)<\\/div>/i\n];\n\nfor (const pattern of articlePatterns) {\n    const match = text.match(pattern);\n    if (match && match[1]) {\n        mainContent = match[1];\n        break;\n    }\n}\n\nif (!mainContent) {\n    mainContent = text;\n}\n\n// Remove all HTML tags\nmainContent = mainContent.replace(/<[^>]+>/g, ' ');\n\n// Clean up HTML entities\nmainContent = mainContent.replace(/&nbsp;/g, ' ');\nmainContent = mainContent.replace(/&amp;/g, '&');\nmainContent = mainContent.replace(/&lt;/g, '<');\nmainContent = mainContent.replace(/&gt;/g, '>');\nmainContent = mainContent.replace(/&quot;/g, '\"');\nmainContent = mainContent.replace(/&#39;/g, \"'\");\nmainContent = mainContent.replace(/&#039;/g, \"'\");\nmainContent = mainContent.replace(/&[^;]+;/g, ' ');\n\n// Remove extra whitespace\nmainContent = mainContent.replace(/\\s+/g, ' ');\nmainContent = mainContent.trim();\n\n// Limit text length for API (adjusted for GPT-4)\nconst maxLength = 12000;\nif (mainContent.length > maxLength) {\n    mainContent = mainContent.substring(0, maxLength) + '...';\n}\n\n// Try to get canonical URL if needed\nif (!url) {\n    const canonicalMatch = text.match(/<link[^>]*rel=[\"']canonical[\"'][^>]*href=[\"']([^\"']*)[\"']/i);\n    if (canonicalMatch) {\n        url = canonicalMatch[1];\n    }\n}\n\nreturn {\n    article_url: url || inputData.article_url,\n    article_title: title || 'No title found',\n    article_text: mainContent || 'No content extracted',\n    description: description,\n    timestamp: new Date().toISOString(),\n    text_length: mainContent.length\n};"
+      },
+      "id": "4b31a505-799b-4eda-9779-c24cc97dce4b",
+      "name": "Clean HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        64
+      ],
+      "notes": "Extracts clean text from HTML"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{$credentials.openaiApiKey}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"model\": \"gpt-4-turbo-preview\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an expert at extracting entities from news articles. Extract all companies, organizations, people, and key facts. For each entity, provide as much context as possible including roles, titles, and relationships. Return the data as valid JSON.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Extract entities from this article:\\n\\nTitle: {{ $json.article_title }}\\n\\nContent: {{ $json.article_text }}\\n\\nReturn a JSON object with this structure:\\n{\\n  \\\"companies\\\": [\\n    {\\n      \\\"name\\\": \\\"Company Name\\\",\\n      \\\"type\\\": \\\"Company/Organization/Government/etc\\\",\\n      \\\"role\\\": \\\"Their role or mention in the article\\\",\\n      \\\"context\\\": \\\"Additional context from the article\\\"\\n    }\\n  ],\\n  \\\"people\\\": [\\n    {\\n      \\\"name\\\": \\\"Person Name\\\",\\n      \\\"title\\\": \\\"Their title or position\\\",\\n      \\\"organization\\\": \\\"Their organization\\\",\\n      \\\"context\\\": \\\"What they said or did in the article\\\"\\n    }\\n  ],\\n  \\\"key_facts\\\": [\\n    \\\"Important fact or figure from the article\\\"\\n  ],\\n  \\\"locations\\\": [\\n    {\\n      \\\"name\\\": \\\"Location name\\\",\\n      \\\"type\\\": \\\"Country/City/Region\\\",\\n      \\\"context\\\": \\\"Why it's mentioned\\\"\\n    }\\n  ]\\n}\"\n    }\n  ],\n  \"temperature\": 0.3,\n  \"max_tokens\": 2000,\n  \"response_format\": { \"type\": \"json_object\" }\n}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "91269767-7ce5-49f0-9015-132ed3e0a8d6",
+      "name": "Extract Entities (OpenAI GPT-4)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        320,
+        64
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "openai-credentials",
+          "name": "OpenAI API Credentials"
+        }
+      },
+      "notes": "Uses GPT-4 for better entity extraction"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse OpenAI response\nconst response = $input.first().json;\nconst inputData = $input.first().json;\nlet extracted = {};\n\ntry {\n  // Handle different response structures\n  let content;\n  if (response.choices && response.choices[0] && response.choices[0].message) {\n    content = response.choices[0].message.content;\n  } else if (typeof response === 'string') {\n    content = response;\n  } else {\n    content = JSON.stringify(response);\n  }\n  \n  // Parse the JSON content\n  extracted = JSON.parse(content);\n} catch (error) {\n  console.error('Error parsing OpenAI response:', error);\n  extracted = {\n    companies: [],\n    people: [],\n    key_facts: [],\n    locations: [],\n    error: error.message\n  };\n}\n\n// Ensure arrays exist\nextracted.companies = extracted.companies || [];\nextracted.people = extracted.people || [];\nextracted.key_facts = extracted.key_facts || [];\nextracted.locations = extracted.locations || [];\n\n// Add article info\nextracted.article_url = inputData.article_url;\nextracted.article_title = inputData.article_title;\nextracted.extraction_timestamp = new Date().toISOString();\n\nreturn extracted;"
+      },
+      "id": "7c152544-74b3-4dc5-8142-b8222ca98f41",
+      "name": "Parse OpenAI Extraction",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "companies",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "id": "9b736d91-30cb-46bf-8c3a-6b557f77bc14",
+      "name": "Split Companies for Search",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 3,
+      "position": [
+        720,
+        -48
+      ],
+      "notes": "Splits companies for individual searches"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"api_key\": \"{{$credentials.tavilyApiKey}}\",\n  \"query\": \"{{ $json.companies.name }} company official website contact email phone headquarters\",\n  \"search_depth\": \"advanced\",\n  \"include_domains\": [],\n  \"exclude_domains\": [],\n  \"max_results\": 5,\n  \"include_answer\": true,\n  \"include_raw_content\": false,\n  \"include_images\": false\n}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "tavily-company-search",
+      "name": "Search Company Info (Tavily)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        912,
+        -48
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "tavily-credentials",
+          "name": "Tavily API Credentials"
+        }
+      },
+      "continueOnFail": true,
+      "notes": "Enhanced search using Tavily API"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process Tavily search results for companies\nconst searchResult = $input.first().json;\nconst company = searchResult.companies || {};\n\nlet companyInfo = {\n  name: company.name,\n  type: company.type,\n  role: company.role,\n  search_performed: true,\n  website: null,\n  contact_email: null,\n  phone: null,\n  headquarters: null,\n  additional_info: []\n};\n\ntry {\n  if (searchResult.answer) {\n    companyInfo.search_summary = searchResult.answer;\n  }\n  \n  if (searchResult.results && Array.isArray(searchResult.results)) {\n    // Extract website from first result\n    if (searchResult.results[0]) {\n      companyInfo.website = searchResult.results[0].url;\n      \n      // Try to extract contact info from content\n      const content = searchResult.results.map(r => r.content || '').join(' ');\n      \n      // Email pattern\n      const emailMatch = content.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})/g);\n      if (emailMatch && emailMatch[0]) {\n        companyInfo.contact_email = emailMatch[0];\n      }\n      \n      // Phone pattern\n      const phoneMatch = content.match(/[\\+]?[(]?[0-9]{1,4}[)]?[-\\s\\.]?[(]?[0-9]{1,4}[)]?[-\\s\\.]?[0-9]{1,4}[-\\s\\.]?[0-9]{1,9}/g);\n      if (phoneMatch && phoneMatch[0]) {\n        companyInfo.phone = phoneMatch[0];\n      }\n      \n      // Store top results\n      companyInfo.search_results = searchResult.results.slice(0, 3).map(r => ({\n        title: r.title,\n        url: r.url,\n        snippet: r.content ? r.content.substring(0, 200) : ''\n      }));\n    }\n  }\n} catch (error) {\n  companyInfo.error = error.message;\n}\n\nreturn {\n  ...companyInfo,\n  ...searchResult\n};"
+      },
+      "id": "process-tavily-company",
+      "name": "Process Company Search Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "people",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "id": "bc4c1f5c-0091-4c97-babd-0afde241b2c2",
+      "name": "Split People for Search",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 3,
+      "position": [
+        720,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"api_key\": \"{{$credentials.tavilyApiKey}}\",\n  \"query\": \"{{ $json.people.name }} {{ $json.people.title }} {{ $json.people.organization }} LinkedIn profile contact\",\n  \"search_depth\": \"advanced\",\n  \"include_domains\": [\"linkedin.com\", \"twitter.com\", \"{{ $json.people.organization ? $json.people.organization.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com' : '' }}\"],\n  \"max_results\": 5,\n  \"include_answer\": true,\n  \"include_raw_content\": false,\n  \"include_images\": false\n}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "tavily-people-search",
+      "name": "Find Person Profile (Tavily)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        912,
+        160
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "tavily-credentials",
+          "name": "Tavily API Credentials"
+        }
+      },
+      "continueOnFail": true,
+      "notes": "Search for LinkedIn and social profiles"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process Tavily search results for people\nconst searchResult = $input.first().json;\nconst person = searchResult.people || {};\n\nlet personInfo = {\n  name: person.name,\n  title: person.title,\n  organization: person.organization,\n  context: person.context,\n  search_performed: true,\n  linkedin_url: null,\n  twitter_url: null,\n  professional_info: []\n};\n\ntry {\n  if (searchResult.answer) {\n    personInfo.search_summary = searchResult.answer;\n  }\n  \n  if (searchResult.results && Array.isArray(searchResult.results)) {\n    // Look for LinkedIn profile\n    const linkedinResult = searchResult.results.find(r => r.url && r.url.includes('linkedin.com'));\n    if (linkedinResult) {\n      personInfo.linkedin_url = linkedinResult.url;\n    }\n    \n    // Look for Twitter profile\n    const twitterResult = searchResult.results.find(r => r.url && r.url.includes('twitter.com'));\n    if (twitterResult) {\n      personInfo.twitter_url = twitterResult.url;\n    }\n    \n    // Store professional information\n    personInfo.professional_info = searchResult.results.slice(0, 3).map(r => ({\n      source: r.title,\n      url: r.url,\n      snippet: r.content ? r.content.substring(0, 200) : ''\n    }));\n  }\n} catch (error) {\n  personInfo.error = error.message;\n}\n\nreturn {\n  ...personInfo,\n  ...searchResult\n};"
+      },
+      "id": "process-tavily-people",
+      "name": "Process People Search Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "aggregateItems",
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "companies",
+              "renameField": false
+            },
+            {
+              "fieldToAggregate": "people",
+              "renameField": false
+            },
+            {
+              "fieldToAggregate": "key_facts",
+              "renameField": false
+            },
+            {
+              "fieldToAggregate": "locations",
+              "renameField": false
+            },
+            {
+              "fieldToAggregate": "article_url",
+              "renameField": false
+            },
+            {
+              "fieldToAggregate": "article_title",
+              "renameField": false
+            }
+          ]
+        }
+      },
+      "id": "97067f75-a955-43a6-8074-f8c646706614",
+      "name": "Combine All Results",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 3,
+      "position": [
+        1296,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Compile all results into comprehensive report\nconst aggregatedData = $input.first().json;\n\n// Get article info\nconst articleUrl = aggregatedData.article_url ? aggregatedData.article_url[0] : '';\nconst articleTitle = aggregatedData.article_title ? aggregatedData.article_title[0] : 'Article Analysis';\n\n// Process companies\nconst companies = new Map();\nif (aggregatedData.companies) {\n  aggregatedData.companies.forEach(c => {\n    if (c && c.name) {\n      companies.set(c.name, c);\n    }\n  });\n}\n\n// Process people\nconst people = new Map();\nif (aggregatedData.people) {\n  aggregatedData.people.forEach(p => {\n    if (p && p.name) {\n      people.set(p.name, p);\n    }\n  });\n}\n\n// Get key facts and locations\nconst keyFacts = aggregatedData.key_facts ? [...new Set(aggregatedData.key_facts.flat())] : [];\nconst locations = aggregatedData.locations ? aggregatedData.locations : [];\n\n// Format comprehensive HTML email\nlet emailHtml = `\n<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }\n    .container { max-width: 900px; margin: 0 auto; padding: 20px; }\n    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; }\n    .content { background: white; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }\n    .section { margin: 25px 0; }\n    .section-title { color: #4a5568; font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }\n    table { width: 100%; border-collapse: collapse; margin: 15px 0; }\n    th { background: #f7fafc; color: #2d3748; padding: 12px; text-align: left; font-weight: 600; }\n    td { padding: 12px; border-bottom: 1px solid #e2e8f0; }\n    tr:hover { background: #f7fafc; }\n    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }\n    .badge-company { background: #e6fffa; color: #047481; }\n    .badge-person { background: #fed7e2; color: #822727; }\n    .badge-location { background: #e9d8fd; color: #44337a; }\n    .fact-item { background: #f7fafc; padding: 10px; margin: 8px 0; border-left: 4px solid #667eea; }\n    .link { color: #667eea; text-decoration: none; }\n    .link:hover { text-decoration: underline; }\n    .metadata { background: #f7fafc; padding: 15px; border-radius: 8px; margin: 20px 0; }\n    .footer { text-align: center; color: #718096; font-size: 12px; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1 style=\"margin: 0;\">📊 Article Intelligence Report</h1>\n      <p style=\"margin: 10px 0 0 0; opacity: 0.9;\">Entity Extraction & Contact Discovery</p>\n    </div>\n    \n    <div class=\"content\">\n      <div class=\"metadata\">\n        <h3 style=\"margin-top: 0; color: #2d3748;\">📰 Article Information</h3>\n        <p><strong>Title:</strong> ${articleTitle}</p>\n        <p><strong>URL:</strong> <a href=\"${articleUrl}\" class=\"link\">${articleUrl}</a></p>\n        <p><strong>Processed:</strong> ${new Date().toLocaleString()}</p>\n        <p><strong>Entities Found:</strong> ${companies.size} companies, ${people.size} people, ${locations.length} locations</p>\n      </div>\n`;\n\n// Add companies section\nif (companies.size > 0) {\n  emailHtml += `\n      <div class=\"section\">\n        <h2 class=\"section-title\">🏢 Companies & Organizations (${companies.size})</h2>\n        <table>\n                    <thead><tr>\n<th>Organization</th>\n              <th>Type</th>\n              <th>Role/Context</th>\n              <th>Website</th>\n              <th>Contact</th>\n            </tr>\n          </thead>\n          <tbody>`;\n  \n  companies.forEach(company => {\n    emailHtml += `\n            <tr>\n              <td><strong>${company.name}</strong></td>\n              <td><span class=\"badge badge-company\">${company.type || 'Organization'}</span></td>\n              <td>${company.role || company.context || 'Mentioned in article'}</td>\n              <td>${company.website ? `<a href=\"${company.website}\" class=\"link\">Website</a>` : '-'}</td>\n              <td>${company.contact_email || company.phone || '-'}</td>\n            </tr>`;\n  });\n  \n  emailHtml += `\n          </tbody>\n        </table>\n      </div>`;\n}\n\n// Add people section\nif (people.size > 0) {\n  emailHtml += `\n      <div class=\"section\">\n        <h2 class=\"section-title\">👥 Key People (${people.size})</h2>\n        <table>\n          <thead>\n            <tr>\n              <th>Name</th>\n              <th>Title/Position</th>\n              <th>Organization</th>\n              <th>LinkedIn</th>\n              <th>Context</th>\n            </tr>\n          </thead>\n          <tbody>`;\n  \n  people.forEach(person => {\n    emailHtml += `\n            <tr>\n              <td><strong>${person.name}</strong></td>\n              <td>${person.title || '-'}</td>\n              <td>${person.organization || '-'}</td>\n              <td>${person.linkedin_url ? `<a href=\"${person.linkedin_url}\" class=\"link\">Profile</a>` : '-'}</td>\n              <td>${person.context ? person.context.substring(0, 100) + '...' : '-'}</td>\n            </tr>`;\n  });\n  \n  emailHtml += `\n          </tbody>\n        </table>\n      </div>`;\n}\n\n// Add locations section\nif (locations.length > 0) {\n  emailHtml += `\n      <div class=\"section\">\n        <h2 class=\"section-title\">📍 Locations Mentioned (${locations.length})</h2>\n        <table>\n          <thead>\n            <tr>\n              <th>Location</th>\n              <th>Type</th>\n              <th>Context</th>\n            </tr>\n          </thead>\n          <tbody>`;\n  \n  locations.forEach(location => {\n    if (location && location.name) {\n      emailHtml += `\n            <tr>\n              <td><strong>${location.name}</strong></td>\n              <td><span class=\"badge badge-location\">${location.type || 'Location'}</span></td>\n              <td>${location.context || 'Mentioned in article'}</td>\n            </tr>`;\n    }\n  });\n  \n  emailHtml += `\n          </tbody>\n        </table>\n      </div>`;\n}\n\n// Add key facts\nif (keyFacts.length > 0) {\n  emailHtml += `\n      <div class=\"section\">\n        <h2 class=\"section-title\">🔍 Key Facts & Insights (${keyFacts.length})</h2>`;\n  \n  keyFacts.forEach(fact => {\n    if (fact) {\n      emailHtml += `\n        <div class=\"fact-item\">${fact}</div>`;\n    }\n  });\n  \n  emailHtml += `\n      </div>`;\n}\n\nemailHtml += `\n    </div>\n    \n    <div class=\"footer\">\n      <p>This report was generated by the Enhanced Article Intelligence Workflow</p>\n      <p>Powered by OpenAI GPT-4 and Tavily Search API</p>\n    </div>\n  </div>\n</body>\n</html>`;\n\n// Create plain text version\nlet emailText = `ARTICLE INTELLIGENCE REPORT\\n\\n`;\nemailText += `Article: ${articleTitle}\\n`;\nemailText += `URL: ${articleUrl}\\n`;\nemailText += `Processed: ${new Date().toLocaleString()}\\n\\n`;\n\nif (companies.size > 0) {\n  emailText += `COMPANIES & ORGANIZATIONS:\\n`;\n  companies.forEach(c => {\n    emailText += `- ${c.name} (${c.type || 'Organization'}): ${c.role || 'Mentioned'}\\n`;\n  });\n  emailText += `\\n`;\n}\n\nif (people.size > 0) {\n  emailText += `KEY PEOPLE:\\n`;\n  people.forEach(p => {\n    emailText += `- ${p.name}, ${p.title || 'N/A'} at ${p.organization || 'N/A'}\\n`;\n  });\n  emailText += `\\n`;\n}\n\nif (keyFacts.length > 0) {\n  emailText += `KEY FACTS:\\n`;\n  keyFacts.forEach(fact => {\n    emailText += `- ${fact}\\n`;\n  });\n}\n\nreturn {\n  subject: `Intelligence Report: ${articleTitle.substring(0, 50)}${articleTitle.length > 50 ? '...' : ''}`,\n  html: emailHtml,\n  text: emailText,\n  companies: Array.from(companies.values()),\n  people: Array.from(people.values()),\n  locations: locations,\n  key_facts: keyFacts,\n  article_url: articleUrl,\n  article_title: articleTitle,\n  timestamp: new Date().toISOString()\n};"
+      },
+      "id": "93b24b2c-f5e1-4a30-9c75-9c7dfa63a29d",
+      "name": "Format Comprehensive Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1488,
+        64
+      ],
+      "notes": "Creates formatted email with all extracted and enriched data"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Article URL": "={{ $json.article_url }}",
+            "Article Title": "={{ $json.article_title }}",
+            "Companies Found": "={{ $json.companies.length }}",
+            "People Found": "={{ $json.people.length }}",
+            "Key Facts": "={{ $json.key_facts.join('; ') }}",
+            "Timestamp": "={{ $json.timestamp }}",
+            "Companies List": "={{ $json.companies.map(c => c.name).join(', ') }}",
+            "People List": "={{ $json.people.map(p => p.name).join(', ') }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "29277170-1179-436d-8d4e-d8f45d5f08f8",
+      "name": "Log to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        1680,
+        64
+      ],
+      "continueOnFail": true,
+      "notes": "Optional: Logs results to a spreadsheet"
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $credentials.fromEmail }}",
+        "toEmail": "={{ $credentials.toEmail }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1680,
+        240
+      ],
+      "id": "9e90d373-1470-4578-8514-7cb195967fbc",
+      "name": "Send Email Report",
+      "credentials": {
+        "smtp": {
+          "id": "email-credentials",
+          "name": "Email SMTP Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## API Credentials Setup\n\n### Required Credentials:\n\n1. **OpenAI API Key**\n   - Get from: https://platform.openai.com/api-keys\n   - Used for: Entity extraction with GPT-4\n   - Store in credential: `openai-credentials`\n\n2. **Tavily API Key**\n   - Get from: https://tavily.com/\n   - Used for: Enhanced web search\n   - Store in credential: `tavily-credentials`\n\n3. **Email SMTP** (optional)\n   - Configure your email settings\n   - Used for: Sending reports\n\n4. **Google Sheets** (optional)\n   - Setup Google OAuth\n   - Used for: Logging results",
+        "height": 350,
+        "width": 400
+      },
+      "id": "credentials-note",
+      "name": "Credentials Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        100
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Article URLs Input": {
+      "main": [
+        [
+          {
+            "node": "Split URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split URLs": {
+      "main": [
+        [
+          {
+            "node": "Fetch Article Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Article Content": {
+      "main": [
+        [
+          {
+            "node": "Clean HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean HTML": {
+      "main": [
+        [
+          {
+            "node": "Extract Entities (OpenAI GPT-4)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Entities (OpenAI GPT-4)": {
+      "main": [
+        [
+          {
+            "node": "Parse OpenAI Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse OpenAI Extraction": {
+      "main": [
+        [
+          {
+            "node": "Split Companies for Search",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split People for Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Companies for Search": {
+      "main": [
+        [
+          {
+            "node": "Search Company Info (Tavily)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Company Info (Tavily)": {
+      "main": [
+        [
+          {
+            "node": "Process Company Search Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Company Search Results": {
+      "main": [
+        [
+          {
+            "node": "Combine All Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split People for Search": {
+      "main": [
+        [
+          {
+            "node": "Find Person Profile (Tavily)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Person Profile (Tavily)": {
+      "main": [
+        [
+          {
+            "node": "Process People Search Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process People Search Results": {
+      "main": [
+        [
+          {
+            "node": "Combine All Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine All Results": {
+      "main": [
+        [
+          {
+            "node": "Format Comprehensive Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Comprehensive Report": {
+      "main": [
+        [
+          {
+            "node": "Log to Google Sheets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Email Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "enhanced-v2",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "enhanced-article-extractor"
+  },
+  "id": "EnhancedWebDataExtractor",
+  "tags": ["web-scraping", "entity-extraction", "openai", "tavily", "contact-discovery"]
+}

@@ -11,9 +11,13 @@ import {
   Menu,
   X,
   LogOut,
-  User
+  User,
+  ChevronDown,
+  ChevronRight,
+  Wallet
 } from 'lucide-react';
 import Dashboard from './components/Dashboard';
+import FinancialOverview from './components/FinancialOverview';
 import Analytics from './components/Analytics';
 import FinancialPlanning from './components/FinancialPlanning';
 import Profile from './components/Profile';
@@ -22,11 +26,12 @@ import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import IncomeForm from './components/IncomeForm';
 import IncomeList from './components/IncomeList';
-import Onboarding from './components/Onboarding';
+// import Onboarding from './components/Onboarding';
 import AuthModal from './components/AuthModal';
 import LoanForm from './components/LoanForm';
 import CreditCardForm from './components/CreditCardForm';
 import SavingsForm from './components/SavingsForm';
+import SquareBack from './components/SquareBack';
 import { AuthProvider, useAuthContext } from './contexts/AuthContext';
 import { useExpenses } from './hooks/useExpenses';
 import { useIncome } from './hooks/useIncome';
@@ -36,7 +41,7 @@ import { useLoans } from './hooks/useLoans';
 import { useSavingsAccounts } from './hooks/useSavingsAccounts';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 
-type ActiveView = 'dashboard' | 'expenses' | 'income' | 'analytics' | 'financial-planning' | 'smart-home' | 'profile';
+type ActiveView = 'dashboard' | 'financial-overview' | 'expenses' | 'income' | 'analytics' | 'financial-planning' | 'smart-home' | 'financial-settings';
 
 const AppContent = () => {
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
@@ -45,12 +50,13 @@ const AppContent = () => {
   const [editingExpense, setEditingExpense] = useState(null);
   const [editingIncome, setEditingIncome] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  // const [showOnboarding, setShowOnboarding] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showLoanForm, setShowLoanForm] = useState(false);
   const [showCreditCardForm, setShowCreditCardForm] = useState(false);
   const [showSavingsForm, setShowSavingsForm] = useState(false);
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  // const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [expenseMenuExpanded, setExpenseMenuExpanded] = useState(true);
 
   const { user, loading: authLoading, logout } = useAuthContext();
 
@@ -126,24 +132,24 @@ const AppContent = () => {
       setShowAuthModal(false);
       
       // Check onboarding for authenticated user
-      const completed = localStorage.getItem(`onboarding-completed-${user.uid}`);
-      const hasData = expenses.length > 0 || incomeEntries.length > 0;
+      // const completed = localStorage.getItem(`onboarding-completed-${user.uid}`);
+      // const hasData = expenses.length > 0 || incomeEntries.length > 0;
       
-      if (!completed && !hasData && !expensesLoading && !incomeLoading) {
-        setShowOnboarding(true);
-      }
+      // if (!completed && !hasData && !expensesLoading && !incomeLoading) {
+      //   setShowOnboarding(true);
+      // }
       
-      setHasCompletedOnboarding(!!completed);
+      // setHasCompletedOnboarding(!!completed);
     }
-  }, [user, authLoading, expenses.length, incomeEntries.length, expensesLoading, incomeLoading]);
+  }, [user, authLoading]);
 
-  const handleOnboardingComplete = () => {
-    if (user) {
-      localStorage.setItem(`onboarding-completed-${user.uid}`, 'true');
-      setHasCompletedOnboarding(true);
-      setShowOnboarding(false);
-    }
-  };
+  // const handleOnboardingComplete = () => {
+  //   if (user) {
+  //     localStorage.setItem(`onboarding-completed-${user.uid}`, 'true');
+  //     setHasCompletedOnboarding(true);
+  //     setShowOnboarding(false);
+  //   }
+  // };
 
   const handleLogout = async () => {
     try {
@@ -222,19 +228,25 @@ const AppContent = () => {
   };
 
   const navigationItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'smart-home', label: 'Smart Home', icon: Home },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, type: 'main' },
+    { id: 'smart-home', label: 'Smart Home', icon: Home, type: 'main' },
+  ];
+
+  const expenseSubItems = [
+    { id: 'financial-overview', label: 'Overview', icon: BarChart3 },
     { id: 'expenses', label: 'Expenses', icon: Receipt },
     { id: 'income', label: 'Income', icon: DollarSign },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'financial-planning', label: 'Financial Planning', icon: TrendingUp },
-    { id: 'profile', label: 'Profile', icon: Settings },
+    { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+    { id: 'financial-planning', label: 'Planning', icon: TrendingUp },
+    { id: 'financial-settings', label: 'Settings', icon: Settings },
   ];
 
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard':
-        return <Dashboard expenses={expenses} incomeEntries={incomeEntries} monthlyStats={monthlyStats} />;
+        return <Dashboard />;
+      case 'financial-overview':
+        return <FinancialOverview expenses={expenses} incomeEntries={incomeEntries} monthlyStats={monthlyStats} />;
       case 'smart-home':
         return <SmartHomeDashboard />;
       case 'expenses':
@@ -268,20 +280,20 @@ const AppContent = () => {
           onAddCreditCard={() => setShowCreditCardForm(true)}
           onAddSavingsAccount={() => setShowSavingsForm(true)}
         />;
-      case 'profile':
+      case 'financial-settings':
         return <Profile />;
       default:
-        return <Dashboard expenses={expenses} incomeEntries={incomeEntries} monthlyStats={monthlyStats} />;
+        return <Dashboard />;
     }
   };
 
   if (authLoading || expensesLoading || incomeLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{backgroundColor: '#0a0a0a'}}>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p className="text-gray-300">
-            {authLoading ? 'Authenticating...' : 'Loading your financial data...'}
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+          <p className="text-cyan-100">
+            {authLoading ? 'Authenticating...' : 'Loading your data...'}
           </p>
         </div>
       </div>
@@ -291,18 +303,17 @@ const AppContent = () => {
   if (!user) {
     return (
       <>
-        <div className="min-h-screen flex items-center justify-center" style={{backgroundColor: '#0a0a0a'}}>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
           <div className="text-center">
-            <div className="p-8 rounded-lg shadow-xl max-w-md border" style={{backgroundColor: '#1a1a1a', borderColor: '#333333'}}>
-              <div className="p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center border" style={{backgroundColor: '#1a1a1a', borderColor: '#60a5fa'}}>
-                <BarChart3 className="w-8 h-8 text-blue-400" />
+            <div className="p-8 rounded-2xl shadow-2xl max-w-md border border-cyan-500/30 backdrop-blur-sm bg-slate-900/50">
+              <div className="p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center bg-gradient-to-br from-cyan-500 to-blue-500 shadow-lg shadow-cyan-500/50">
+                <BarChart3 className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-white mb-2">Welcome to <span className="text-blue-400">ALFRED</span></h1>
-              <p className="text-gray-300 mb-6">Automated Lifestyle & Financial Resource Executive Director</p>
+              <h1 className="text-2xl font-bold text-white mb-2">Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">ALFRED</span></h1>
+              <p className="text-slate-300 mb-6">Automated Lifestyle & Financial Resource Executive Director</p>
               <button
                 onClick={() => setShowAuthModal(true)}
-                className="w-full py-3 px-4 rounded-lg transition-all font-medium border hover:bg-blue-400 hover:text-black"
-                style={{backgroundColor: '#1a1a1a', color: '#60a5fa', borderColor: '#60a5fa'}}
+                className="w-full py-3 px-4 rounded-lg transition-all font-medium bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white shadow-lg hover:shadow-cyan-500/50"
               >
                 Begin Service
               </button>
@@ -316,43 +327,54 @@ const AppContent = () => {
 
   if (expensesError || incomeError) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{backgroundColor: '#0a0a0a'}}>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
         <div className="text-center">
           <div className="text-red-400 text-4xl mb-4">⚠️</div>
           <p className="text-red-400 mb-2">Error loading data</p>
-          <p className="text-gray-300 text-sm">{expensesError || incomeError}</p>
+          <p className="text-slate-300 text-sm">{expensesError || incomeError}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex" style={{backgroundColor: '#0a0a0a'}}>
+    <div className="min-h-screen flex bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 relative">
+      {/* Animated Background */}
+      <div className="fixed inset-0 z-0 opacity-20">
+        <SquareBack
+          speed={0.5}
+          squareSize={40}
+          direction="diagonal"
+          borderColor="#0ff"
+          hoverFillColor="#222"
+        />
+      </div>
+
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-90 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-64 shadow-xl transform transition-transform duration-300 ease-in-out border-r
+        fixed lg:static inset-y-0 left-0 z-50 w-64 shadow-2xl transform transition-transform duration-300 ease-in-out border-r border-cyan-500/20 backdrop-blur-xl relative
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `} style={{backgroundColor: '#111111', borderColor: '#333333'}}>
-        <div className="flex items-center justify-between p-6 border-b" style={{borderColor: '#333333'}}>
+      `} style={{backgroundColor: 'rgba(15, 23, 42, 0.8)'}}>
+        <div className="flex items-center justify-between p-6 border-b border-cyan-500/20">
           <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-lg" style={{backgroundColor: '#1a1a1a'}}>
-              <BarChart3 className="w-6 h-6 text-blue-400" />
+            <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 shadow-lg shadow-cyan-500/50">
+              <BarChart3 className="w-6 h-6 text-white" />
             </div>
-            <span className="text-xl font-bold text-blue-400">ALFRED</span>
+            <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">ALFRED</span>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-1 rounded transition-colors hover:opacity-70"
+            className="lg:hidden p-1 rounded transition-colors hover:text-cyan-400"
           >
-            <X className="w-5 h-5 text-gray-400" />
+            <X className="w-5 h-5 text-slate-400" />
           </button>
         </div>
 
@@ -364,87 +386,95 @@ const AppContent = () => {
                 setActiveView(item.id as ActiveView);
                 setSidebarOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all ${
                 activeView === item.id
-                  ? 'font-medium'
-                  : 'text-gray-300 hover:opacity-70'
+                  ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/50 text-cyan-300 font-medium shadow-lg shadow-cyan-500/20'
+                  : 'text-slate-300 hover:bg-slate-800/50 hover:text-cyan-400'
               }`}
-              style={activeView === item.id ? {backgroundColor: '#1a1a1a', color: '#fbbf24', border: '1px solid #fbbf24'} : {}}
             >
               <item.icon className="w-5 h-5" />
               <span>{item.label}</span>
             </button>
           ))}
+          
+          {/* Expense Management Expandable Section */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setExpenseMenuExpanded(!expenseMenuExpanded)}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-all ${
+                ['expenses', 'income', 'analytics', 'financial-planning'].includes(activeView)
+                  ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/50 text-cyan-300 font-medium'
+                  : 'text-slate-300 hover:bg-slate-800/50 hover:text-cyan-400'
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <Wallet className="w-5 h-5" />
+                <span>Expense Management</span>
+              </div>
+              {expenseMenuExpanded ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </button>
+            
+            {expenseMenuExpanded && (
+              <div className="ml-4 space-y-1 border-l-2 border-cyan-500/30 pl-4">
+                {expenseSubItems.map((subItem) => (
+                  <button
+                    key={subItem.id}
+                    onClick={() => {
+                      setActiveView(subItem.id as ActiveView);
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-all text-sm ${
+                      activeView === subItem.id
+                        ? 'bg-cyan-500/20 text-cyan-300 font-medium'
+                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-cyan-400'
+                    }`}
+                  >
+                    <subItem.icon className="w-4 h-4" />
+                    <span>{subItem.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </nav>
 
         {/* Quick Actions */}
-        <div className="p-4 border-t" style={{borderColor: '#333333'}}>
-          <div className="space-y-2">
-            <button
-              onClick={() => setShowExpenseForm(true)}
-              className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all hover:border-yellow-400 border border-transparent"
-              style={{backgroundColor: '#1a1a1a', color: '#f3f4f6'}}
-            >
-              <Plus className="w-5 h-5" />
-              <span>Record Expense</span>
-            </button>
-            <button
-              onClick={() => setShowIncomeForm(true)}
-              className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all hover:border-yellow-400 border border-transparent"
-              style={{backgroundColor: '#1a1a1a', color: '#f3f4f6'}}
-            >
-              <Plus className="w-5 h-5" />
-              <span>Record Income</span>
-            </button>
-          </div>
+        <div className="p-4 border-t border-cyan-500/20 mt-auto">
+          
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden relative z-10">
         {/* Header */}
-        <header className="shadow-sm border-b px-6 py-4" style={{backgroundColor: '#111111', borderColor: '#333333'}}>
+        <header className="shadow-lg border-b border-cyan-500/20 px-6 py-4 backdrop-blur-xl relative z-20" style={{backgroundColor: 'rgba(15, 23, 42, 0.8)'}}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 rounded-lg hover:opacity-70 transition-opacity"
+                className="lg:hidden p-2 rounded-lg hover:bg-cyan-500/20 transition-colors"
               >
-                <Menu className="w-5 h-5 text-gray-300" />
+                <Menu className="w-5 h-5 text-cyan-300" />
               </button>
-              <h1 className="text-2xl font-semibold text-white capitalize">
-                {activeView}
+              <h1 className="text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 capitalize">
+                {activeView === 'financial-planning' ? 'Planning' : activeView.replace('-', ' ')}
               </h1>
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="hidden sm:flex items-center space-x-2">
-                <button
-                  onClick={() => setShowExpenseForm(true)}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all hover:bg-yellow-400 hover:text-black hover:border-yellow-400"
-                  style={{backgroundColor: '#1a1a1a', color: '#f3f4f6', borderColor: '#333333'}}
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="hidden md:inline">Expense</span>
-                </button>
-                <button
-                  onClick={() => setShowIncomeForm(true)}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all hover:bg-yellow-400 hover:text-black hover:border-yellow-400"
-                  style={{backgroundColor: '#1a1a1a', color: '#f3f4f6', borderColor: '#333333'}}
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="hidden md:inline">Income</span>
-                </button>
-              </div>
               
               {/* User Menu */}
               <div className="flex items-center space-x-3">
                 <div
-                  className="flex items-center space-x-2 text-gray-300 cursor-pointer hover:opacity-80"
-                  onClick={() => setActiveView('profile')}
+                  className="flex items-center space-x-2 text-slate-300 cursor-pointer hover:text-cyan-400 transition-colors"
+                  onClick={() => setActiveView('financial-settings')}
                   title="Go to Profile"
                 >
-                  <div className="p-2 rounded-full" style={{backgroundColor: '#333333'}}>
+                  <div className="p-2 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
                     <User className="w-4 h-4" />
                   </div>
                   <span className="hidden sm:inline text-sm">
@@ -453,7 +483,7 @@ const AppContent = () => {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center space-x-2 px-3 py-2 text-gray-400 rounded-lg transition-colors hover:opacity-70"
+                  className="flex items-center space-x-2 px-3 py-2 text-slate-400 rounded-lg transition-colors hover:text-red-400 hover:bg-red-500/10"
                   title="Logout"
                 >
                   <LogOut className="w-4 h-4" />
@@ -465,7 +495,7 @@ const AppContent = () => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-6" style={{backgroundColor: '#0a0a0a'}}>
+        <main className="flex-1 overflow-auto p-6 relative z-10" style={{backgroundColor: 'rgba(15, 23, 42, 0.3)'}}>
           {renderContent()}
         </main>
       </div>
@@ -479,7 +509,7 @@ const AppContent = () => {
         }}
         onSubmit={editingExpense ? handleUpdateExpense : handleAddExpense}
         expense={editingExpense}
-        onOpenSettings={() => setActiveView('profile')}
+        onOpenSettings={() => setActiveView('financial-settings')}
       />
 
       <IncomeForm
@@ -511,11 +541,11 @@ const AppContent = () => {
       />
 
       {/* Onboarding */}
-      <Onboarding
+      {/* <Onboarding
         isOpen={showOnboarding}
         onClose={() => setShowOnboarding(false)}
         onComplete={handleOnboardingComplete}
-      />
+      /> */}
 
       {/* Auth Modal */}
       <AuthModal 
